@@ -39,7 +39,11 @@ struct ContentView: View {
 
     
     var body: some View {
-        stream.view
+        ZStack {
+            stream.view
+        }
+        .frame(maxWidth: .infinity,
+               maxHeight: .infinity)
     }
     
 }

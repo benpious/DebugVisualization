@@ -15,7 +15,6 @@ struct LLDBMessage {
     
     let mangledDecodeName: String
     let libraryLocation: String
-    //    let channel: String // TODO: support channels
     let data: Data
     
     init(mangledDecodeName: String,
@@ -49,10 +48,12 @@ extension LLDBMessage {
             .joined(separator: ",")
             .replacingOccurrences(of: "\\\\", with: "")
             .replacingOccurrences(of: "\\\"", with: "\"")
-            .dropLast(3)
-        self.data = str
-            .data(using: .utf8)!
-        print(str)
+            .dropLast(3) // More Hacks
+        if let data = str.data(using: .utf8) {
+            self.data = data
+        } else {
+            throw "Couldn't convert data from UTF-8. This should never happen."
+        }
     }
 
     
@@ -92,7 +93,7 @@ class TargetLibrary {
                 if let view = view as? AnyView {
                     return view
                 } else {
-                    throw "\(view) couldn't be converted to SwiftUI.AnyView."
+                    throw "\(String(describing: view)) couldn't be converted to SwiftUI.AnyView."
                 }
             } else {
                 throw "Couldn't find a function named \(message.mangledAnyViewName)"
