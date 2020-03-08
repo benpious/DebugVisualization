@@ -6,10 +6,12 @@ class LLDBStream: ObservableObject {
     
     private let port: Int
     
+    private var libraryCache: [String: TargetLibrary] = [:]
+    
     // TODO: there is an insane amount of indirection going on here, this cannot actually be the way to do it.
     // Actually read SwiftNIO's docs and try again.
     //
-    // Also errors need to actually be handled properly here. 
+    // Also errors need to actually be handled properly here.
     
     fileprivate class Handler: ChannelInboundHandler {
         
@@ -50,6 +52,7 @@ class LLDBStream: ObservableObject {
     
     init(port: Int) {
         self.port = port
+        let handler = self.handler
         let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
         server = ServerBootstrap(group: group)
             .serverChannelOption(ChannelOptions.backlog, value: 256)
@@ -59,7 +62,7 @@ class LLDBStream: ObservableObject {
         )
             .childChannelInitializer { channel in
                 channel.pipeline.addHandler(BackPressureHandler()).flatMap { v in
-                    channel.pipeline.addHandler(Handler())
+                    channel.pipeline.addHandler(handler)
                 }
         }
         .childChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
@@ -71,7 +74,24 @@ class LLDBStream: ObservableObject {
     }
         
     func handleMessage(_ message: String) {
-        
+        do {
+            let message = try LLDBMessage(data: message)
+            let library = try libraryCache[message.libraryLocation] ?? {
+                let library = try TargetLibrary(path: message.libraryLocation)
+                libraryCache[message.libraryLocation] = library
+                return library
+            }()
+            let v = try library.deserialize(message: message)
+            DispatchQueue.main.async {
+                // TODO: do this right in Combine
+                self.view = v
+            }
+        } catch {
+            DispatchQueue.main.async {
+                // TODO: do this right in Combine
+                self.view = AnyView(Text(error.localizedDescription))
+            }
+        }
     }
     
     func start() {

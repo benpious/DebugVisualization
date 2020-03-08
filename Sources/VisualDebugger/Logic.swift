@@ -11,88 +11,48 @@ import XPC
 import Combine
 import SwiftUI
 
-
-final class Controller: ObservableObject {
-
-    @Published
-    var view: AnyView = AnyView(Text("No Data"))
-    
-    let willChange = PassthroughSubject<Controller, Never>()
-
-    let connection: xpc_connection_t
-    
-    func updateView<T>(to newView: T) where T: View {
-        view = AnyView(newView)
-    }
-    
-    func handleMessage(_ message: xpc_object_t) {
-        let data = (message as! NSData) as Data
-        let message = Message(data: data)
-        switch message {
-        case .newData(let newData):
-            if let library = library {
-                view = library.deserialize(message: newData)
-            } else {
-                fatalError()
-            }
-        case .loadLibrary(let path):
-            do {
-                library = try TargetLibrary(path: path)
-            } catch {
-                fatalError(error.localizedDescription) // TODO
-            }
-        }
-    }
-    
-    init() {
-        let queue = DispatchQueue(label: "ReceiveData")
-        connection = xpc_connection_create("benpious.visualDebugger", queue)
-        xpc_connection_set_event_handler(connection) { [weak self] (message) in
-            self?.handleMessage(message)
-        }
-    }
-    
-    var library: TargetLibrary?
-    
-    func start() {
-        xpc_connection_resume(connection)
-    }
-    
-}
-
-enum Message {
-    
-    init(data: Data) {
-        fatalError()
-    }
-    
-    case newData(NewDataMessage)
-    case loadLibrary(path: String)
-    
-}
-
-struct NewDataMessage {
+struct LLDBMessage {
     
     let mangledDecodeName: String
-    let mangledAnyViewName: String
+    let libraryLocation: String
     //    let channel: String // TODO: support channels
     let data: Data
     
     init(mangledDecodeName: String,
-         mangledAnyViewName: String,
+         libraryLocation: String,
          data: Data) {
         self.mangledDecodeName = mangledDecodeName
-        self.mangledAnyViewName = mangledAnyViewName
+        self.libraryLocation = libraryLocation
         self.data = data
+    }
+    
+    var mangledAnyViewName: String {
+        // HACK: find a good way of doing this.
+//        (libraryLocation.components(separatedBy: "/").last ?? "") +
+        "TestTarget_dataToAnyView"
     }
     
 }
 
 
-extension NewDataMessage {
+extension LLDBMessage {
     
-    init(data: Data) {
-        fatalError()
+    init(data: String) throws {
+        let data = data.split(separator: ",")
+        if data.count < 3 {
+            throw "Message should be of the form \"library location, mangled type name, data\", comma delimited: \(data)"
+        }
+        libraryLocation = String(data[0].dropFirst()) // HACK: the dropfirst 2 is necessary because there's an extra '"\' in my test data. This needs to be investigated and fixed elsewhere
+        mangledDecodeName = String(data[1].dropFirst(2).dropLast())
+        let str = data
+            .dropFirst(2)
+            .joined(separator: ",")
+            .replacingOccurrences(of: "\\\\", with: "")
+            .replacingOccurrences(of: "\\\"", with: "\"")
+            .dropLast(3)
+        self.data = str
+            .data(using: .utf8)!
+        print(str)
     }
 
     
@@ -100,30 +60,46 @@ extension NewDataMessage {
 
 class TargetLibrary {
     
-    let lib: UnsafeMutableRawPointer
+    private let lib: UnsafeMutableRawPointer
     
     init(path: String) throws {
         if let lib = dlopen(path, RTLD_NOW) {
             self.lib = lib
         } else {
-            throw "Couldn't load library at \(path)"
+            if let error = dlerror() {
+                throw String(cString: error)
+            } else {
+                throw "Couldn't load library at \(path)"
+            }
         }
     }
     
-    func addressOfFunction(named name: String) -> UnsafeMutableRawPointer! {
+    private func addressOfFunction(named name: String) -> UnsafeMutableRawPointer? {
         name.withCString { (body) in
             dlsym(lib, body)
         }
     }
-        
-    func deserialize(message: NewDataMessage) -> AnyView {
+    
+    func deserialize(message: LLDBMessage) throws -> AnyView {
         // TODO: check to make sure no symbols are in the name
-        let type = _typeByName(message.mangledDecodeName) as! Decodable.Type
-        let data = try! type.decode(from: message.data)
-        typealias MakeViewFunc = @convention(c) (AnyObject) -> NSObject
-        let makeView = unsafeBitCast(addressOfFunction(named: message.mangledAnyViewName),
-                                     to: MakeViewFunc.self)
-        return makeView(data as AnyObject).value(forKey: "view") as! AnyView
+        if let type = _typeByName(message.mangledDecodeName) as? Decodable.Type {
+            let data = try type.decode(from: message.data)
+            typealias MakeViewFunc = @convention(c) (AnyObject) -> NSObject
+            if let makeView = addressOfFunction(named: message.mangledAnyViewName) {
+                let makeView = unsafeBitCast(makeView,
+                    to: MakeViewFunc.self)
+                let view = makeView(data as AnyObject).value(forKey: "view")
+                if let view = view as? AnyView {
+                    return view
+                } else {
+                    throw "\(view) couldn't be converted to SwiftUI.AnyView."
+                }
+            } else {
+                throw "Couldn't find a function named \(message.mangledAnyViewName)"
+            }
+        } else {
+            throw "type \(message.mangledDecodeName) doesn't conform to Decodable."
+        }
     }
     
 }
