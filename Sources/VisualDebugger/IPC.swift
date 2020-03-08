@@ -1,41 +1,86 @@
-import Foundation
+import NIO
 import Combine
 import SwiftUI
 
 class LLDBStream: ObservableObject {
     
-    let inputStream: InputStream
+    private let port: Int
     
-    init?(port: UInt16) {
-        var inputStream: InputStream?
-        Stream.getStreamsToHost(withName: "localhost",
-                                port: 7000,
-                                inputStream: &inputStream,
-                                outputStream: nil)
-        if let inputStream = inputStream {
-            self.inputStream = inputStream
-        } else {
-            return nil
+    // TODO: there is an insane amount of indirection going on here, this cannot actually be the way to do it.
+    // Actually read SwiftNIO's docs and try again.
+    //
+    // Also errors need to actually be handled properly here. 
+    
+    fileprivate class Handler: ChannelInboundHandler {
+        
+        var onRead: ((String) -> ())? = nil
+        
+        typealias InboundIn = ByteBuffer
+        typealias OutboundOut = ByteBuffer
+
+        func channelRead(context: ChannelHandlerContext, data: NIOAny) {
+            var buffer = unwrapInboundIn(data)
+            if let bytes = buffer.readBytes(length: buffer.readableBytes) {
+                let message = bytes.withUnsafeBufferPointer { (bytes) in
+                    bytes.withMemoryRebound(to: CChar.self) { (bytes) in
+                        String(utf8String: bytes.baseAddress!)
+                    }
+                }
+                if let message = message {
+                    onRead?(message)
+                }
+            }
+            context.write(data, promise: nil)
         }
+
+        func channelReadComplete(context: ChannelHandlerContext) {
+            context.flush()
+        }
+
+        public func errorCaught(context: ChannelHandlerContext, error: Error) {
+            print("error: ", error)
+            context.close(promise: nil)
+        }
+        
+    }
+    
+    private let handler = Handler()
+    
+    private let server: ServerBootstrap
+    
+    init(port: Int) {
+        self.port = port
+        let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+        server = ServerBootstrap(group: group)
+            .serverChannelOption(ChannelOptions.backlog, value: 256)
+            .serverChannelOption(
+                ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR),
+                value: 1
+        )
+            .childChannelInitializer { channel in
+                channel.pipeline.addHandler(BackPressureHandler()).flatMap { v in
+                    channel.pipeline.addHandler(Handler())
+                }
+        }
+        .childChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
+        .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 16)
+        .childChannelOption(ChannelOptions.recvAllocator, value: AdaptiveRecvByteBufferAllocator())
+        handler.onRead = { [weak self] message in
+            self?.handleMessage(message)
+        }
+    }
+        
+    func handleMessage(_ message: String) {
+        
     }
     
     func start() {
-        inputStream.open()
-        let timer = Timer(timeInterval: 0.1, repeats: true) { [inputStream] (_) in
-            while inputStream.hasBytesAvailable {
-                var buffer = Data(count: 100)
-                let result = buffer.withUnsafeMutableBytes { (buffer) in
-                    inputStream.read(buffer, maxLength: 100)
-                }
-                if result > 0 {
-                    let string = String(data: buffer, encoding: .utf8)!
-                    print(string)
-                }
+        server.bind(host: "localhost", port: port)
+            .whenComplete { (result) in
+                print(result)
             }
-        }
-        RunLoop.main.add(timer,
-                         forMode: .common)
     }
+
     
     @Published
     var view: AnyView = AnyView(Text("No Data"))

@@ -4,18 +4,11 @@ public class VisualDebugger {
     
     let lldbStream: LLDBStream
     
-    public init?() {
-        if let stream = LLDBStream(port: 7000) {
-            lldbStream = stream
-        } else {
-            return nil
-        }
+    public init() {
+        lldbStream = LLDBStream(port: 7000)
     }
     
     public func start() {
-//        let type = MangledNameTest<Int>.self
-//        let name = mangledName(from: type)
-//        print(name)
         lldbStream.start()
     }
     
