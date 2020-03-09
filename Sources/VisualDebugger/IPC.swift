@@ -97,6 +97,7 @@ class LLDBStream: ObservableObject {
     func start() {
         server.bind(host: "localhost", port: port)
             .whenComplete { (result) in
+                // TODO:
                 print(result)
             }
     }

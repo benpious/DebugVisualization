@@ -13,22 +13,20 @@ import SwiftUI
 
 struct LLDBMessage {
     
-    let mangledDecodeName: String
+    let mangling: MangledName
     let libraryLocation: String
     let data: Data
     
-    init(mangledDecodeName: String,
+    init(mangling: MangledName,
          libraryLocation: String,
          data: Data) {
-        self.mangledDecodeName = mangledDecodeName
+        self.mangling = mangling
         self.libraryLocation = libraryLocation
         self.data = data
     }
     
     var mangledAnyViewName: String {
-        // HACK: find a good way of doing this.
-//        (libraryLocation.components(separatedBy: "/").last ?? "") +
-        "TestTarget_dataToAnyView"
+        mangling.moduleName + "_" + mangling.typeName + "ToAnyView"
     }
     
 }
@@ -42,7 +40,7 @@ extension LLDBMessage {
             throw "Message should be of the form \"library location, mangled type name, data\", comma delimited: \(data)"
         }
         libraryLocation = String(data[0].dropFirst()) // HACK: the dropfirst 2 is necessary because there's an extra '"\' in my test data. This needs to be investigated and fixed elsewhere
-        mangledDecodeName = String(data[1].dropFirst(2).dropLast())
+        mangling = try String(data[1].dropLast()).basicDemangle()
         let str = data
             .dropFirst(2)
             .joined(separator: ",")
@@ -83,7 +81,7 @@ class TargetLibrary {
     
     func deserialize(message: LLDBMessage) throws -> AnyView {
         // TODO: check to make sure no symbols are in the name
-        if let type = _typeByName(message.mangledDecodeName) as? Decodable.Type {
+        if let type = _typeByName(message.mangling.runtimeUsableName) as? Decodable.Type {
             let data = try type.decode(from: message.data)
             typealias MakeViewFunc = @convention(c) (AnyObject) -> NSObject
             if let makeView = addressOfFunction(named: message.mangledAnyViewName) {
@@ -99,7 +97,7 @@ class TargetLibrary {
                 throw "Couldn't find a function named \(message.mangledAnyViewName)"
             }
         } else {
-            throw "type \(message.mangledDecodeName) doesn't conform to Decodable."
+            throw "type \(message.mangling.runtimeUsableName) doesn't conform to Decodable."
         }
     }
     

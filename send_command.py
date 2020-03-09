@@ -12,7 +12,7 @@ var info = Dl_info()
 dladdr(pointer, &info)
 let fileName = String(cString: info.dli_fname)
 let mangledName = String(cString: info.dli_sname)
-"\(fileName), \(mangledName), \(string)"
+"\(fileName),\(mangledName),\(string)"
         """.format(name=var_name))
     asyncio.run(send(output))
 
