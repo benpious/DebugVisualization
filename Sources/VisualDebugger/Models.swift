@@ -43,12 +43,12 @@ extension LLDBMessage {
             throw "Couldn't convert data from UTF-8. This should never happen."
         }
     }
-
+    
     
 }
 
 class TargetLibrary {
-        
+    
     private let lib: UnsafeMutableRawPointer
     
     init(path: String) throws {
@@ -76,7 +76,7 @@ class TargetLibrary {
             typealias MakeViewFunc = @convention(c) (AnyObject) -> NSObject
             if let makeView = addressOfFunction(named: message.mangledAnyViewName) {
                 let makeView = unsafeBitCast(makeView,
-                    to: MakeViewFunc.self)
+                                             to: MakeViewFunc.self)
                 let view = makeView(data as AnyObject).value(forKey: "view")
                 if let view = view as? AnyView {
                     return view
@@ -106,7 +106,7 @@ extension String: Error {
 }
 
 extension Decodable {
-        
+    
     static func decode(from data: Data) throws -> Self {
         try JSONDecoder().decode(self, from: data)
     }
