@@ -9,7 +9,7 @@ struct RootView: View {
         ZStack {
             // TODO: switch to switch statement.
             // As far as I'm aware this is the only way to do this in Swift FunctionBuilders,
-            // but it's painfully bad. 
+            // but it's painfully bad.
             if stream.state.message != nil {
                 Text(stream.state.message!)
                     .frame(maxWidth: .infinity,
@@ -19,7 +19,7 @@ struct RootView: View {
                     .frame(maxWidth: .infinity,
                            maxHeight: .infinity)
             } else if stream.state.views != nil {
-                LatestView(views: stream.state.views!)
+                DataView(views: stream.state.views!)
                         .frame(maxWidth: .infinity,
                                maxHeight: .infinity,
                                alignment: .topLeading)
@@ -66,9 +66,9 @@ struct DataView: View {
             if type == .latest {
                 LatestView(views: views)
             } else if type == .sequence {
-                
+                HorizontallyScrolling(views: views)
             } else if type == .list {
-                
+                ListView(views: views)
             }
             
         }
@@ -94,4 +94,45 @@ struct LatestView: View {
                maxHeight: .infinity)
     }
             
+}
+
+fileprivate struct IndexedView: Identifiable {
+    let id: Int
+    let view: AnyView
+}
+
+struct ListView: View {
+        
+    init(views: [AnyView]) {
+        self.views = views.enumerated().map { IndexedView(id: $0, view: $1) }
+    }
+    
+    private let views: [IndexedView]
+    
+    var body: some View {
+        List(views) {
+            $0.view
+        }
+    }
+}
+
+struct HorizontallyScrolling: View {
+    
+    init(views: [AnyView]) {
+        self.views = views.enumerated().map { IndexedView(id: $0, view: $1) }
+    }
+    
+    private let views: [IndexedView]
+    
+    var body: some View {
+        ScrollView(.horizontal,
+                   showsIndicators: true) {
+                    HStack {
+                        ForEach(views) {
+                            $0.view
+                        }
+                    }
+        }
+    }
+    
 }
