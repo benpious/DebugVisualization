@@ -83,12 +83,10 @@ class LLDBStream: ObservableObject {
             }()
             let v = try library.deserialize(message: message)
             DispatchQueue.main.async {
-                // TODO: do this right in Combine
                 self.view = v
             }
         } catch {
             DispatchQueue.main.async {
-                // TODO: do this right in Combine
                 self.view = AnyView(Text(error.localizedDescription))
             }
         }

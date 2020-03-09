@@ -1,13 +1,3 @@
-//
-//  File.swift
-//  
-//
-//  Created by Benjamin Pious on 2/22/20.
-//
-
-import Foundation
-import Combine
-import XPC
 import Combine
 import SwiftUI
 
@@ -58,7 +48,7 @@ extension LLDBMessage {
 }
 
 class TargetLibrary {
-    
+        
     private let lib: UnsafeMutableRawPointer
     
     init(path: String) throws {
@@ -99,6 +89,10 @@ class TargetLibrary {
         } else {
             throw "type \(message.mangling.runtimeUsableName) doesn't conform to Decodable."
         }
+    }
+    
+    deinit {
+        dlclose(lib)
     }
     
 }
