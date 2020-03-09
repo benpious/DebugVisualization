@@ -13,24 +13,9 @@ public class VisualDebugger {
     }
     
     public func makeView() -> some View {
-        ContentView()
+        RootView()
             .environmentObject(lldbStream)
     }
         
 }
 
-struct ContentView: View {
-    
-    @EnvironmentObject
-    var stream: LLDBStream
-
-    
-    var body: some View {
-        ZStack {
-            stream.view
-        }
-        .frame(maxWidth: .infinity,
-               maxHeight: .infinity)
-    }
-    
-}

@@ -1,13 +1,18 @@
 import NIO
-import Combine
-import SwiftUI
 
-class LLDBStream: ObservableObject {
+class Server {
+    
+    var onRead: ((String) -> ())? {
+        get {
+            handler.onRead
+        }
+        set {
+            handler.onRead = newValue
+        }
+    }
     
     private let port: Int
-    
-    private var libraryCache: [String: TargetLibrary] = [:]
-    
+        
     // TODO: there is an insane amount of indirection going on here, this cannot actually be the way to do it.
     // Actually read SwiftNIO's docs and try again.
     //
@@ -68,30 +73,8 @@ class LLDBStream: ObservableObject {
         .childChannelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
         .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 16)
         .childChannelOption(ChannelOptions.recvAllocator, value: AdaptiveRecvByteBufferAllocator())
-        handler.onRead = { [weak self] message in
-            self?.handleMessage(message)
-        }
     }
-        
-    func handleMessage(_ message: String) {
-        do {
-            let message = try LLDBMessage(data: message)
-            let library = try libraryCache[message.libraryLocation] ?? {
-                let library = try TargetLibrary(path: message.libraryLocation)
-                libraryCache[message.libraryLocation] = library
-                return library
-            }()
-            let v = try library.deserialize(message: message)
-            DispatchQueue.main.async {
-                self.view = v
-            }
-        } catch {
-            DispatchQueue.main.async {
-                self.view = AnyView(Text(error.localizedDescription))
-            }
-        }
-    }
-    
+            
     func start() {
         server.bind(host: "localhost", port: port)
             .whenComplete { (result) in
@@ -99,11 +82,5 @@ class LLDBStream: ObservableObject {
                 print(result)
             }
     }
-
-    
-    @Published
-    var view: AnyView = AnyView(Text("No Data"))
-    
-    let willChange = PassthroughSubject<LLDBStream, Never>()
 
 }
