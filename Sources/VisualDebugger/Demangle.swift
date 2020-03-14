@@ -49,10 +49,10 @@ extension String {
                              moduleName: moduleName,
                              typeName: name)
             } else {
-                throw "Couldn't construct the second offset from \(self)"
+                throw StringError("Couldn't construct the second offset from \(self)")
             }
         } else {
-            throw "Couldn't construct the first offset from \(self)"
+            throw StringError("Couldn't construct the first offset from \(self)")
         }
     }
     

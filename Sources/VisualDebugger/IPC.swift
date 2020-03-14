@@ -2,7 +2,7 @@ import NIO
 
 class Server {
     
-    var onRead: ((String) -> ())? {
+    var onRead: (([UInt8]) -> ())? {
         get {
             handler.onRead
         }
@@ -20,7 +20,7 @@ class Server {
     
     fileprivate class Handler: ChannelInboundHandler {
         
-        var onRead: ((String) -> ())? = nil
+        var onRead: (([UInt8]) -> ())? = nil
         
         typealias InboundIn = ByteBuffer
         typealias OutboundOut = ByteBuffer
@@ -28,14 +28,7 @@ class Server {
         func channelRead(context: ChannelHandlerContext, data: NIOAny) {
             var buffer = unwrapInboundIn(data)
             if let bytes = buffer.readBytes(length: buffer.readableBytes) {
-                let message = bytes.withUnsafeBufferPointer { (bytes) in
-                    bytes.withMemoryRebound(to: CChar.self) { (bytes) in
-                        String(utf8String: bytes.baseAddress!)
-                    }
-                }
-                if let message = message {
-                    onRead?(message)
-                }
+                onRead?(bytes)
             }
             context.write(data, promise: nil)
         }

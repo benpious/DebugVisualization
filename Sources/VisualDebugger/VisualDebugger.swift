@@ -11,7 +11,7 @@ public class VisualDebugger {
     private let lldbStream: LLDBStream
     
     public init() {
-        lldbStream = LLDBStream(port: 7000)
+        lldbStream = LLDBStream(port: 7001)
     }
     
     public func start() {

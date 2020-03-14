@@ -14,7 +14,7 @@ class LLDBStream: ObservableObject {
         server.start()
     }
     
-    func handleMessage(_ message: String) {
+    func handleMessage(_ message: [UInt8]) {
         do {
             let message = try LLDBMessage(data: message)
             let library = try libraryCache[message.libraryLocation] ?? {

@@ -14,36 +14,37 @@ struct LLDBMessage {
         self.libraryLocation = libraryLocation
         self.data = data
     }
+            
+    init(data: [UInt8]) throws {
+        print(try! String(uInt8: data))
+        guard let comma = ("," as Character).asciiValue else {
+            throw StringError("This should never happen: a comma isn't convertible to ASCII.")
+        }
+        if let firstSplit = data.firstIndex(of: comma) {
+            let restOfString = data[(firstSplit + 1)...]
+            if let secondSplit = restOfString.firstIndex(of: comma) {
+                libraryLocation = try String(
+                    uInt8: Array(data[0..<firstSplit].dropFirst() + [0])
+                ) // HACK:
+                mangling = try String(
+                    uInt8: Array(data[(firstSplit + 1)..<secondSplit].dropLast()) + [0]
+                )
+                    .basicDemangle()
+                let encodedData = data[(secondSplit + 1)...]
+                    .dropLast(3)
+                    .removingDoubleEscapedEscapeCharacters()
+                self.data = Data(encodedData)
+            } else {
+                throw StringError("Message should be of the form \"library location, mangled type name, data\", comma delimited: \(data)")
+            }
+        } else {
+            throw StringError("Message should be of the form \"library location, mangled type name, data\", comma delimited: \(data)")
+        }
+    }
     
     var mangledAnyViewName: String {
         mangling.moduleName + "_" + mangling.typeName + "ToAnyView"
     }
-    
-}
-
-
-extension LLDBMessage {
-    
-    init(data: String) throws {
-        let data = data.split(separator: ",")
-        if data.count < 3 {
-            throw "Message should be of the form \"library location, mangled type name, data\", comma delimited: \(data)"
-        }
-        libraryLocation = String(data[0].dropFirst()) // HACK: the dropfirst 2 is necessary because there's an extra '"\' in my test data. This needs to be investigated and fixed elsewhere
-        mangling = try String(data[1].dropLast()).basicDemangle()
-        let str = data
-            .dropFirst(2)
-            .joined(separator: ",")
-            .replacingOccurrences(of: "\\\\", with: "")
-            .replacingOccurrences(of: "\\\"", with: "\"")
-            .dropLast(3) // More Hacks
-        if let data = str.data(using: .utf8) {
-            self.data = data
-        } else {
-            throw "Couldn't convert data from UTF-8. This should never happen."
-        }
-    }
-    
     
 }
 
@@ -56,9 +57,9 @@ class TargetLibrary {
             self.lib = lib
         } else {
             if let error = dlerror() {
-                throw String(cString: error)
+                throw StringError(String(cString: error))
             } else {
-                throw "Couldn't load library at \(path)"
+                throw StringError("Couldn't load library at \(path)")
             }
         }
     }
@@ -81,13 +82,13 @@ class TargetLibrary {
                 if let view = view as? AnyView {
                     return view
                 } else {
-                    throw "\(String(describing: view)) couldn't be converted to SwiftUI.AnyView."
+                    throw StringError("\(String(describing: view)) couldn't be converted to SwiftUI.AnyView.")
                 }
             } else {
-                throw "Couldn't find a function named \(message.mangledAnyViewName)"
+                throw StringError("Couldn't find a function named \(message.mangledAnyViewName)")
             }
         } else {
-            throw "type \(message.mangling.runtimeUsableName) doesn't conform to Decodable."
+            throw StringError("type \(message.mangling.runtimeUsableName) doesn't conform to Decodable.")
         }
     }
     
@@ -97,18 +98,58 @@ class TargetLibrary {
     
 }
 
-extension String: Error {
+struct StringError: LocalizedError {
     
-    public var localizedDescription: String {
-        self
+    let errorDescription: String?
+    
+    var localizedDescription: String {
+        errorDescription!
+    }
+    
+    init(_ value: String) {
+        errorDescription = value
     }
     
 }
 
-extension Decodable {
+fileprivate extension Decodable {
     
     static func decode(from data: Data) throws -> Self {
         try JSONDecoder().decode(self, from: data)
+    }
+    
+}
+
+extension String {
+    
+    init(uInt8 bytes: [UInt8]) throws {
+        self = try bytes.withUnsafeBufferPointer { (bytes) in
+            try bytes.withMemoryRebound(to: CChar.self) { (bytes) in
+                if let pointer = bytes.baseAddress,
+                    let string = String(utf8String: pointer.advanced(by: bytes.startIndex))  {
+                    return string
+                } else {
+                    throw StringError("Couldn't convert data into UTF-8 encoded String.")
+                }
+            }
+        }
+    }
+    
+}
+
+extension Array where Element == UInt8 {
+    
+    func removingDoubleEscapedEscapeCharacters() -> [UInt8] {
+        let backslash = 92
+        var new = self
+        var removed = 0
+        for (index, char) in enumerated() {
+            if char == backslash {
+                new.remove(at: index - removed)
+                removed += 1
+            }
+        }
+        return new
     }
     
 }

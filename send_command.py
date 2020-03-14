@@ -12,7 +12,7 @@ var info = Dl_info()
 dladdr(pointer, &info)
 let fileName = String(cString: info.dli_fname)
 let mangledName = String(cString: info.dli_sname)
-"\(fileName),\(mangledName),\(string)"
+fileName + "," + mangledName + "," + string
         """.format(name=var_name))
     asyncio.run(send(output))
 
@@ -28,7 +28,7 @@ def expr(debugger, cmd):
         raise
 
 async def send(message):
-    _, writer = await asyncio.open_connection('localhost', 7000)
+    _, writer = await asyncio.open_connection('localhost', 7001)
     writer.write(message.encode())
 
 def __lldb_init_module(debugger, internal_dict):

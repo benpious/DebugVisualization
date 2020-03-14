@@ -10,5 +10,5 @@ final class VisualDebuggerTests: XCTestCase {
                                    moduleName: "TestTarget",
                                    typeName: "Data"))
     }
-    
+        
 }
