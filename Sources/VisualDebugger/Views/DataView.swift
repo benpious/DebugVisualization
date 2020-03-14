@@ -25,15 +25,17 @@ struct DataView: View {
     
     var body: some View {
         VStack {
-            MenuButton(label: Text("Visualization")) {
-                ForEach(Visualization.allCases) { (type) in
-                    Button(String(describing: type).capitalized) {
-                        self.type = type
+            HStack {
+                MenuButton(label: Text("Visualization")) {
+                    ForEach(Visualization.allCases) { (type) in
+                        Button(String(describing: type).capitalized) {
+                            self.type = type
+                        }
                     }
                 }
+                .fixedSize()
+                Spacer()
             }
-            .fixedSize()
-            .padding(8)
             if type == .latest {
                 LatestView(views: views)
             } else if type == .sequence {
@@ -43,6 +45,7 @@ struct DataView: View {
             }
             
         }
+        .padding(16)
     }
     
 }
@@ -51,20 +54,27 @@ struct LatestView: View {
     
     @State
     var index: Int = 0
-
+    
     let views: [AnyView]
     
     var body: some View {
         VStack {
-            Stepper("Index",
-                    value: $index,
-                    in: 0...(views.count - 1))
+            HStack {
+                Stepper("Index",
+                        value: $index,
+                        in: 0...(views.count - 1))
+                Spacer()
+            }
+            .padding(8)
+            Line(.gray)
+            Spacer()
             views[index]
+            Spacer()
         }
         .frame(maxWidth: .infinity,
                maxHeight: .infinity)
     }
-            
+    
 }
 
 fileprivate struct IndexedView: Identifiable {
@@ -73,7 +83,7 @@ fileprivate struct IndexedView: Identifiable {
 }
 
 struct ListView: View {
-        
+    
     init(views: [AnyView]) {
         self.views = views.enumerated().map { IndexedView(id: $0, view: $1) }
     }
@@ -82,7 +92,9 @@ struct ListView: View {
     
     var body: some View {
         List(views) {
+            Spacer()
             $0.view
+            Spacer()
         }
     }
 }
@@ -104,6 +116,20 @@ struct HorizontallyScrolling: View {
                         }
                     }
         }
+    }
+    
+}
+
+struct Line: View {
+    
+    let color: Color
+    
+    init(_ color: Color) {
+        self.color = color
+    }
+    
+    var body: some View {
+        color.frame(height: 1)
     }
     
 }
