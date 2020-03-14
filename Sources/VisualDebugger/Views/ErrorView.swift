@@ -18,15 +18,3 @@ struct ErrorView: View {
     }
     
 }
-
-#if DEBUG
-
-struct ErrorView_Preview: PreviewProvider {
-    
-    static var previews: some View {
-        ErrorView(text: "test")
-    }
-    
-}
-
-#endif

@@ -38,11 +38,20 @@ class LLDBStream: ObservableObject {
     private var libraryCache: [String: TargetLibrary] = [:]
     
     @Published
-    private(set) var state: State = .message("""
-     Waiting for data...
-     Use `command script import` to set up the script,
-     and `send_visual myVarName` to start sending data
-     """)
+    private(set) var state: State = .message(Lines([
+        .init("Waiting for data...",
+              style: .title),
+        .init([
+            .init("Use"),
+            .init("command script import", style: .code),
+            .init("to set up the script,")
+        ]),
+        .init([
+            .init("and"),
+            .init("send_visual myVarName", style: .code),
+            .init("to start sending data")
+        ])
+    ]))
     
     let willChange = PassthroughSubject<LLDBStream, Never>()
     
@@ -53,13 +62,13 @@ class LLDBStream: ObservableObject {
     }
     
     enum State {
-        case message(String)
+        case message(Lines)
         case error(String)
         case views([AnyView])
         
         // TOOD: delete this garbage. See RootView to understand why this is a thing.
         
-        var message: String? {
+        var message: Lines? {
             if case .message(let message) = self {
                 return message
             } else {
