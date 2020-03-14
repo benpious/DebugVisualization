@@ -11,7 +11,7 @@ struct RootView: View {
             // As far as I'm aware this is the only way to do this in Swift FunctionBuilders,
             // but it's painfully bad.
             if stream.state.message != nil {
-                Text(stream.state.message!)
+                WaitingView(message: stream.state.message!)
                     .frame(maxWidth: .infinity,
                            maxHeight: .infinity)
             } else if stream.state.error != nil {

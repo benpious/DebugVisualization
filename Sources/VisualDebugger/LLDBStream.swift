@@ -38,7 +38,11 @@ class LLDBStream: ObservableObject {
     private var libraryCache: [String: TargetLibrary] = [:]
     
     @Published
-    private(set) var state: State = .message("Waiting for data 􀇱")
+    private(set) var state: State = .message("""
+     Waiting for data...
+     Use `command script import` to set up the script,
+     and `send_visual myVarName` to start sending data
+     """)
     
     let willChange = PassthroughSubject<LLDBStream, Never>()
     

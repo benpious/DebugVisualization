@@ -97,6 +97,7 @@ struct ListView: View {
             Spacer()
         }
     }
+    
 }
 
 struct HorizontallyScrolling: View {

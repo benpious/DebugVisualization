@@ -14,7 +14,7 @@ struct LLDBMessage {
         self.libraryLocation = libraryLocation
         self.data = data
     }
-            
+    
     init(data: [UInt8]) throws {
         print(try! String(uInt8: data))
         guard let comma = ("," as Character).asciiValue else {
