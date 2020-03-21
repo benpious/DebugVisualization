@@ -16,7 +16,6 @@ struct LLDBMessage: Codable {
     }
     
     init(data: [UInt8]) throws {
-        print(try! String(uInt8: data))
         guard let comma = ("," as Character).asciiValue else {
             throw StringError("This should never happen: a comma isn't convertible to ASCII.")
         }
