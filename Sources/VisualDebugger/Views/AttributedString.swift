@@ -95,21 +95,29 @@ struct Lines: View {
     
 }
 
-extension Array {
+@dynamicMemberLookup
+struct Identified<T>: Identifiable {
     
-    @dynamicMemberLookup
-    struct Identified: Identifiable {
-        
-        let element: Element
-        let id: Int
-        
-        subscript<T>(dynamicMember member: KeyPath<Element, T>) -> T {
-            element[keyPath: member]
-        }
-        
+    let element: T
+    let id: Int
+    
+    subscript<U>(dynamicMember member: KeyPath<T, U>) -> U {
+        element[keyPath: member]
     }
         
-    func identified() -> [Identified] {
+}
+
+extension Identified: Equatable, Hashable where T: Equatable {
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+}
+
+extension Array {
+            
+    func identified() -> [Identified<Element>] {
         enumerated()
             .map {
                 Identified(element: $1,

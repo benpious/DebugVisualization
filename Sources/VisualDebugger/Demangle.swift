@@ -1,5 +1,5 @@
 
-struct MangledName: Equatable {
+struct MangledName: Equatable, Codable {
     let runtimeUsableName: String
     let moduleName: String
     let typeName: String

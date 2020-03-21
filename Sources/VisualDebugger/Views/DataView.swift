@@ -3,9 +3,9 @@ import SwiftUI
 struct DataView: View {
     
     @State
-    var type: Visualization = .latest
+    var type: VisualizationType = .latest
     
-    enum Visualization: CaseIterable, Identifiable {
+    enum VisualizationType: CaseIterable, Identifiable {
         
         var id: Int {
             switch self {
@@ -21,13 +21,13 @@ struct DataView: View {
         
     }
     
-    let views: [AnyView]
+    let visualizations: [Visualization]
     
     var body: some View {
         VStack {
             HStack {
                 MenuButton(label: Text("Visualization")) {
-                    ForEach(Visualization.allCases) { (type) in
+                    ForEach(VisualizationType.allCases) { (type) in
                         Button(String(describing: type).capitalized) {
                             self.type = type
                         }
@@ -37,13 +37,12 @@ struct DataView: View {
                 Spacer()
             }
             if type == .latest {
-                LatestView(views: views)
+                LatestView(visualizations: visualizations)
             } else if type == .sequence {
-                HorizontallyScrolling(views: views)
+                HorizontallyScrolling(visualizations: visualizations)
             } else if type == .list {
-                ListView(views: views)
+                ListView(views: visualizations)
             }
-            
         }
         .padding(16)
     }
@@ -53,23 +52,30 @@ struct DataView: View {
 struct LatestView: View {
     
     @State
-    var index: Int = 0
+    var index: Int?
     
-    let views: [AnyView]
-    
+    let visualizations: [Visualization]
+        
     var body: some View {
         VStack {
-            HStack {
-                Stepper("Index",
-                        value: $index,
-                        in: 0...(views.count - 1))
-                Spacer()
-            }
-            .padding(8)
             Line(.gray)
-            Spacer()
-            views[index]
-            Spacer()
+            HStack {
+                List(visualizations
+                    .map { $0.timeStamp }
+                    .identified(),
+                     selection: $index) { (timeStamp) in
+                        Text(String(describing: timeStamp.element))
+                }
+                HStack {
+                    Spacer()
+                    VStack {
+                        Spacer()
+                        visualizations[index ?? 0].view
+                        Spacer()
+                    }
+                    Spacer()
+                }
+            }
         }
         .frame(maxWidth: .infinity,
                maxHeight: .infinity)
@@ -77,18 +83,13 @@ struct LatestView: View {
     
 }
 
-fileprivate struct IndexedView: Identifiable {
-    let id: Int
-    let view: AnyView
-}
-
 struct ListView: View {
     
-    init(views: [AnyView]) {
-        self.views = views.enumerated().map { IndexedView(id: $0, view: $1) }
+    init(views: [Visualization]) {
+        self.views = views.identified()
     }
     
-    private let views: [IndexedView]
+    private let views: [Identified<Visualization>]
     
     var body: some View {
         List(views) {
@@ -102,17 +103,17 @@ struct ListView: View {
 
 struct HorizontallyScrolling: View {
     
-    init(views: [AnyView]) {
-        self.views = views.enumerated().map { IndexedView(id: $0, view: $1) }
+    init(visualizations: [Visualization]) {
+        self.visualizations = visualizations.identified()
     }
     
-    private let views: [IndexedView]
+    private let visualizations: [Identified<Visualization>]
     
     var body: some View {
         ScrollView(.horizontal,
                    showsIndicators: true) {
                     HStack {
-                        ForEach(views) {
+                        ForEach(visualizations) {
                             $0.view
                         }
                     }

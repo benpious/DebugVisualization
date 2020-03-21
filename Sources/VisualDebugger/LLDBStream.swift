@@ -23,11 +23,12 @@ class LLDBStream: ObservableObject {
                 return library
             }()
             let view = try library.deserialize(message: message)
-            DispatchQueue.main.async {
-                self.sink.add(view: view)
+            transferToMain {
+                self.sink.add(visualization: Visualization(view: view,
+                                                           timeStamp: Date()))
             }
         } catch {
-            DispatchQueue.main.async {
+            transferToMain {
                 self.state = .error(error.localizedDescription)
             }
         }
@@ -64,7 +65,7 @@ class LLDBStream: ObservableObject {
     enum State {
         case message(Lines)
         case error(String)
-        case views([AnyView])
+        case views([Visualization])
         
         // TOOD: delete this garbage. See RootView to understand why this is a thing.
         
@@ -84,7 +85,7 @@ class LLDBStream: ObservableObject {
             }
         }
 
-        var views: [AnyView]? {
+        var views: [Visualization]? {
             if case .views(let message) = self {
                 return message
             } else {
@@ -98,8 +99,8 @@ class LLDBStream: ObservableObject {
 
 struct Sink {
         
-    mutating func add(view: AnyView) {
-        pastMessages.insert(view,
+    mutating func add(visualization: Visualization) {
+        pastMessages.insert(visualization,
                             at: 0)
         if pastMessages.count > capacity {
             pastMessages.remove(at: 0)
@@ -108,6 +109,6 @@ struct Sink {
     
     var capacity: Int
     
-    private(set) var pastMessages: [AnyView] = []
+    private(set) var pastMessages: [Visualization] = []
     
 }

@@ -17,7 +17,7 @@ struct RootView: View {
             } else if stream.state.error != nil {
                 ErrorView(text: stream.state.error!)
             } else if stream.state.views != nil {
-                DataView(views: stream.state.views!)
+                DataView(visualizations: stream.state.views!)
                         .frame(maxWidth: .infinity,
                                maxHeight: .infinity,
                                alignment: .topLeading)
