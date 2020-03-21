@@ -41,7 +41,7 @@ struct DataView: View {
             } else if type == .sequence {
                 HorizontallyScrolling(visualizations: visualizations)
             } else if type == .list {
-                ListView(views: visualizations)
+                ListOfVisualizations(views: visualizations)
             }
         }
         .padding(16)
@@ -55,7 +55,7 @@ struct LatestView: View {
     var index: Int?
     
     let visualizations: [Visualization]
-        
+    
     var body: some View {
         VStack {
             Line(.gray)
@@ -83,7 +83,7 @@ struct LatestView: View {
     
 }
 
-struct ListView: View {
+struct ListOfVisualizations: View {
     
     init(views: [Visualization]) {
         self.views = views.identified()
