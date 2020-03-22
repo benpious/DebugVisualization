@@ -59,13 +59,14 @@ struct LatestView: View {
     var body: some View {
         VStack {
             Line(.gray)
-            HStack {
+            HSplitView {
                 List(visualizations
-                    .map { $0.timeStamp }
+                    .map { dateFormatter.string(from: $0.timeStamp) }
                     .identified(),
                      selection: $index) { (timeStamp) in
-                        Text(String(describing: timeStamp.element))
+                        Text(timeStamp.element)
                 }
+                .cornerRadius(8)
                 HStack {
                     Spacer()
                     VStack {
@@ -75,6 +76,7 @@ struct LatestView: View {
                     }
                     Spacer()
                 }
+                .layoutPriority(1)
             }
         }
         .frame(maxWidth: .infinity,
@@ -135,3 +137,10 @@ struct Line: View {
     }
     
 }
+
+fileprivate let dateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "en_US")
+    formatter.setLocalizedDateFormatFromTemplate("HH:mm:ss-MMdd")
+    return formatter
+}()
