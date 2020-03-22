@@ -1,7 +1,7 @@
 import Combine
 import SwiftUI
 
-class LLDBStream: ObservableObject {
+final class LLDBStream: ObservableObject {
 
     init(port: Int) {
         server = Server(port: port)
@@ -63,6 +63,7 @@ class LLDBStream: ObservableObject {
     }
     
     enum State {
+        
         case message(Lines)
         case error(String)
         case views([Visualization])

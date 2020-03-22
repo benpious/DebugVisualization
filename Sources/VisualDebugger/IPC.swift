@@ -1,6 +1,6 @@
 import NIO
 
-class Server {
+final class Server {
     
     var onRead: (([UInt8]) -> ())? {
         get {
@@ -21,6 +21,8 @@ class Server {
     fileprivate class Handler: ChannelInboundHandler {
         
         var onRead: (([UInt8]) -> ())? = nil
+        // TODO: I feel like SwiftNIO can handle this by default somehow
+        var accumulation: [UInt8] = []
         
         typealias InboundIn = ByteBuffer
         typealias OutboundOut = ByteBuffer
@@ -28,12 +30,14 @@ class Server {
         func channelRead(context: ChannelHandlerContext, data: NIOAny) {
             var buffer = unwrapInboundIn(data)
             if let bytes = buffer.readBytes(length: buffer.readableBytes) {
-                onRead?(bytes)
+                accumulation += bytes
             }
             context.write(data, promise: nil)
         }
 
         func channelReadComplete(context: ChannelHandlerContext) {
+            onRead?(accumulation)
+            accumulation = []
             context.flush()
         }
 

@@ -47,7 +47,7 @@ struct LLDBMessage: Codable {
     
 }
 
-class TargetLibrary {
+final class TargetLibrary {
     
     private let lib: UnsafeMutableRawPointer
     
@@ -125,7 +125,7 @@ extension String {
         self = try bytes.withUnsafeBufferPointer { (bytes) in
             try bytes.withMemoryRebound(to: CChar.self) { (bytes) in
                 if let pointer = bytes.baseAddress,
-                    let string = String(utf8String: pointer.advanced(by: bytes.startIndex))  {
+                    let string = String(utf8String: pointer)  {
                     return string
                 } else {
                     throw StringError("Couldn't convert data into UTF-8 encoded String.")

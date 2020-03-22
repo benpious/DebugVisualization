@@ -6,7 +6,7 @@ import SwiftUI
 /// and must then call `start()` to start listening for
 /// debugger messages, and `makeView()` to get a view
 /// that you can add to your window hierarchy in an `NSHostingView`.
-public class VisualDebugger {
+public final class VisualDebugger {
     
     private let lldbStream: LLDBStream
     
