@@ -68,32 +68,6 @@ final class LLDBStream: ObservableObject {
         case error(String)
         case views([Visualization])
         
-        // TOOD: delete this garbage. See RootView to understand why this is a thing.
-        
-        var message: Lines? {
-            if case .message(let message) = self {
-                return message
-            } else {
-                return nil
-            }
-        }
-        
-        var error: String? {
-            if case .error(let message) = self {
-                return message
-            } else {
-                return nil
-            }
-        }
-
-        var views: [Visualization]? {
-            if case .views(let message) = self {
-                return message
-            } else {
-                return nil
-            }
-        }
-
     }
     
 }
