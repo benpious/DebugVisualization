@@ -2,13 +2,51 @@
 
 `VisualDebugger` aims to let you write SwiftUI code inside your existing Swift Package/Xcode Project to visualize state or processes inside your app.
 
-This project is currently a prototype. Key features may be missing or incomplete. 
+This project is currently a prototype. Many features have limitations which are discussed at the bottom of this file. 
 
 ## Installation
 
-It is reccomended that you clone and build `VisualDebugger` from source, as this will give you the best debugging experience if the visualization code you author needs to be debugged in lldb. 
-
 `VisualDebugger` is currently available as a Swift Package that you can integrate into a MacOS App. Due to limitations of SPM, it's currently impossible to provide the full app as a package. 
+
+1. Press Command-Shift-N to make a new Project in Xcode, and choose single-view MacOS app. 
+2. File>Swift Packages>Add Package Dependency. Enter `https://github.com/benpious/DebugVisualization` as the URL, and click "next." Pick the version you want, or simply pick `master`. 
+3.  Replace the contents of  `AppDelegate.swift` with
+```
+import Cocoa
+import SwiftUI
+import VisualDebugger
+
+@NSApplicationMain
+class AppDelegate: NSObject, NSApplicationDelegate {
+
+    var window: NSWindow?
+    let debugger = VisualDebugger()
+
+    func applicationDidFinishLaunching(_ aNotification: Notification) {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 480, height: 300),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        window.center()
+        window.setFrameAutosaveName("Main Window")
+        window.contentView = NSHostingView(rootView: debugger.makeView())
+        window.makeKeyAndOrderFront(nil)
+        debugger.start()
+        self.window = window
+    }
+    
+    func applicationWillTerminate(_ aNotification: Notification) {
+        // Insert code here to tear down your application
+    }
+
+}
+
+```
+4. Turn of the application sandbox for the new app. Thsi is necessary so that it can listen on a socket, and read the contents of your application under debug. 
+
+You're now ready to run the app. 
 
 ## Setup and Usage
 
