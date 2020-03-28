@@ -90,7 +90,7 @@ final class LLDBStream: ObservableObject {
     
 }
 
-struct Sink {
+fileprivate struct Sink {
         
     mutating func add(visualization: Visualization) {
         pastMessages.insert(visualization,
@@ -106,7 +106,7 @@ struct Sink {
     
 }
 
-extension Array where Element == Visualization {
+fileprivate extension Array where Element == Visualization {
     
     func sectioned() -> [VisualizationSection] {
         var buckets: [String: [Visualization]] = [:]

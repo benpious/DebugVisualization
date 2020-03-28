@@ -17,7 +17,7 @@ struct LLDBMessage: Codable {
     
     init(data: [UInt8]) throws {
         guard let comma = ("," as Character).asciiValue else {
-            throw StringError("This should never happen: a comma isn't convertible to ASCII.")
+            throw ErrorMessage("This should never happen: a comma isn't convertible to ASCII.")
         }
         if let firstSplit = data.firstIndex(of: comma) {
             let restOfString = data[(firstSplit + 1)...]
@@ -34,10 +34,10 @@ struct LLDBMessage: Codable {
                     .removingDoubleEscapedEscapeCharacters()
                 self.data = Data(encodedData)
             } else {
-                throw StringError("Message should be of the form \"library location, mangled type name, data\", comma delimited: \(data)")
+                throw ErrorMessage("Message should be of the form \"library location, mangled type name, data\", comma delimited: \(data)")
             }
         } else {
-            throw StringError("Message should be of the form \"library location, mangled type name, data\", comma delimited: \(data)")
+            throw ErrorMessage("Message should be of the form \"library location, mangled type name, data\", comma delimited: \(data)")
         }
     }
     
@@ -56,9 +56,9 @@ final class TargetLibrary {
             self.lib = lib
         } else {
             if let error = dlerror() {
-                throw StringError(String(cString: error))
+                throw ErrorMessage(String(cString: error))
             } else {
-                throw StringError("Couldn't load library at \(path)")
+                throw ErrorMessage("Couldn't load library at \(path)")
             }
         }
     }
@@ -70,7 +70,7 @@ final class TargetLibrary {
     }
     
     func deserialize(message: LLDBMessage) throws -> AnyView {
-        // TODO: check to make sure no symbols are in the name
+        // TODO: check to make sure no symbolic references in the name
         if let type = _typeByName(message.mangling.runtimeUsableName) as? Decodable.Type {
             let data = try type.decode(from: message.data)
             typealias MakeViewFunc = @convention(c) (AnyObject) -> NSObject
@@ -81,13 +81,13 @@ final class TargetLibrary {
                 if let view = view as? AnyView {
                     return view
                 } else {
-                    throw StringError("\(String(describing: view)) couldn't be converted to SwiftUI.AnyView.")
+                    throw ErrorMessage("\(String(describing: view)) couldn't be converted to SwiftUI.AnyView.")
                 }
             } else {
-                throw StringError("Couldn't find a function named \(message.mangledAnyViewName)")
+                throw ErrorMessage("Couldn't find a function named \(message.mangledAnyViewName)")
             }
         } else {
-            throw StringError("type \(message.mangling.runtimeUsableName) doesn't conform to Decodable.")
+            throw ErrorMessage("type \(message.mangling.runtimeUsableName) doesn't conform to Decodable.")
         }
     }
     
@@ -97,7 +97,7 @@ final class TargetLibrary {
     
 }
 
-struct StringError: LocalizedError {
+struct ErrorMessage: LocalizedError {
     
     let errorDescription: String?
     
@@ -128,7 +128,7 @@ extension String {
                     let string = String(utf8String: pointer)  {
                     return string
                 } else {
-                    throw StringError("Couldn't convert data into UTF-8 encoded String.")
+                    throw ErrorMessage("Couldn't convert data into UTF-8 encoded String.")
                 }
             }
         }
