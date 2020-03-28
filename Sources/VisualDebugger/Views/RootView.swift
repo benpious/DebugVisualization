@@ -4,10 +4,10 @@ struct RootView: View {
     
     @EnvironmentObject
     var stream: LLDBStream
-            
+    
     var body: some View {
         ZStack {
-            stream.state.view
+            stream.state.view(using: $stream.organization)
         }
     }
     
@@ -15,21 +15,35 @@ struct RootView: View {
 
 extension LLDBStream.State {
     
-    var view: AnyView {
+    func view(using binding: Binding<Organization>) -> AnyView {
         switch self {
         case .error(let error):
-            return AnyView(ErrorView(text: error))
+            return AnyView(
+                ErrorView(text: error)
+            )
         case .message(let message):
-            return AnyView(WaitingView(message: message)
-                .frame(maxWidth: .infinity,
-                       maxHeight: .infinity))
-        case .views(let views):
-            return AnyView(DataView(visualizations: views)
+            return AnyView(
+                WaitingView(message: message)
+                    .frame(maxWidth: .infinity,
+                           maxHeight: .infinity)
+            )
+        case .interleavedViews(let views):
+            return AnyView(
+                DataControl(organization: binding) {
+                    DataView(visualizations: views)
+                }
                 .frame(maxWidth: .infinity,
                        maxHeight: .infinity,
-                       alignment: .topLeading))
+                       alignment: .topLeading)
+            )
+        case .sectionedVisualizations(let sections):
+            return AnyView(
+                DataControl(organization: binding) {
+                    TabbedVisualizationsView(sections: sections)
+                }
+            )
         }
     }
-    
+        
 }
 

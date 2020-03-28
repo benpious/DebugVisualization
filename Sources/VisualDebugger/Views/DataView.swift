@@ -1,50 +1,60 @@
 import SwiftUI
 
-struct DataView: View {
+struct DataControl<Content>: View where Content: View {
     
-    @State
-    var type: VisualizationType = .latest
-    
-    enum VisualizationType: CaseIterable, Identifiable {
-        
-        var id: Int {
-            switch self {
-            case .latest: return 0
-            case .sequence: return 1
-            case .list: return 2
-            }
-        }
-        
-        case latest
-        case sequence
-        case list
-        
+    init(organization: Binding<Organization>,
+         @ViewBuilder content: @escaping () -> (Content)) {
+        self.organization = organization
+        self.content = content
     }
     
-    let visualizations: [Visualization]
+    var organization: Binding<Organization> // TODO: Find a way to use the @Binding annotation
+    
+    let content: () -> (Content)
     
     var body: some View {
         VStack {
             HStack {
-                MenuButton(label: Text("Visualization")) {
-                    ForEach(VisualizationType.allCases) { (type) in
-                        Button(String(describing: type).capitalized) {
-                            self.type = type
+                MenuButton("Organization") {
+                    ForEach(Organization.allCases) { organization in
+                        Button(String(describing: organization).capitalized) {
+                            self.organization.wrappedValue = organization
                         }
                     }
                 }
                 .fixedSize()
                 Spacer()
             }
-            if type == .latest {
-                LatestView(visualizations: visualizations)
-            } else if type == .sequence {
-                HorizontallyScrolling(visualizations: visualizations)
-            } else if type == .list {
-                ListOfVisualizations(views: visualizations)
-            }
+            content()
         }
         .padding(16)
+    }
+    
+}
+
+struct TabbedVisualizationsView: View {
+    
+    let sections: [VisualizationSection]
+    
+    var body: some View {
+        TabView {
+            ForEach(sections) { section in
+                DataView(visualizations: section.visualizations)
+                    .tabItem {
+                        Text(section.name)
+                }
+            }
+        }
+    }
+    
+}
+
+struct DataView: View {
+    
+    let visualizations: [Visualization]
+    
+    var body: some View {
+        LatestView(visualizations: visualizations)
     }
     
 }
@@ -85,45 +95,6 @@ struct LatestView: View {
     
 }
 
-struct ListOfVisualizations: View {
-    
-    init(views: [Visualization]) {
-        self.views = views.identified()
-    }
-    
-    private let views: [Identified<Visualization>]
-    
-    var body: some View {
-        List(views) {
-            Spacer()
-            $0.view
-            Spacer()
-        }
-    }
-    
-}
-
-struct HorizontallyScrolling: View {
-    
-    init(visualizations: [Visualization]) {
-        self.visualizations = visualizations.identified()
-    }
-    
-    private let visualizations: [Identified<Visualization>]
-    
-    var body: some View {
-        ScrollView(.horizontal,
-                   showsIndicators: true) {
-                    HStack {
-                        ForEach(visualizations) {
-                            $0.view
-                        }
-                    }
-        }
-    }
-    
-}
-
 struct Line: View {
     
     let color: Color
@@ -144,3 +115,17 @@ fileprivate let dateFormatter: DateFormatter = {
     formatter.setLocalizedDateFormatFromTemplate("HH:mm:ss-MMdd")
     return formatter
 }()
+
+enum Organization: CaseIterable, Identifiable {
+    
+    case tabs
+    case interleaved
+    
+    var id: Int {
+        switch self {
+        case .tabs: return 0
+        case .interleaved: return 1
+        }
+    }
+}
+

@@ -153,17 +153,3 @@ extension Array where Element == UInt8 {
     
 }
 
-struct Visualization: Hashable {
-    
-    let view: AnyView
-    let timeStamp: Date
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(timeStamp)
-    }
-    
-    static func == (lhs: Visualization, rhs: Visualization) -> Bool {
-        lhs.timeStamp == rhs.timeStamp
-    }
-    
-}

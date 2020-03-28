@@ -1,6 +1,5 @@
 import SwiftUI
 
-
 struct WaitingView: View {
     
     let message: Lines
@@ -15,8 +14,8 @@ struct WaitingView: View {
             .multilineTextAlignment(.center)
             .foregroundColor(.white)
             .padding(cornerRadius * 2)
-            .modifier(MovingPath(animatableData: flash ? 1 : 0.2,
-                                 cornerRadius: self.cornerRadius))
+            .modifier(PulsingBackground(animatableData: flash ? 1 : 0.2,
+                                        cornerRadius: self.cornerRadius))
             .cornerRadius(cornerRadius)
             .onAppear {
                 withAnimation(Animation
@@ -29,7 +28,7 @@ struct WaitingView: View {
     
 }
 
-fileprivate struct MovingPath: AnimatableModifier {
+fileprivate struct PulsingBackground: AnimatableModifier {
     
     var animatableData: Double
     

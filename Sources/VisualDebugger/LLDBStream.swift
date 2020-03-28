@@ -24,7 +24,8 @@ final class LLDBStream: ObservableObject {
             }()
             let view = try library.deserialize(message: message)
             transferToMain {
-                self.sink.add(visualization: Visualization(view: view,
+                self.sink.add(visualization: Visualization(type: message.mangling.typeName,
+                                                           view: view,
                                                            timeStamp: Date()))
             }
         } catch {
@@ -37,6 +38,13 @@ final class LLDBStream: ObservableObject {
     private let server: Server
     
     private var libraryCache: [String: TargetLibrary] = [:]
+    
+    @Published
+    var organization: Organization = .interleaved {
+        didSet {
+            updateState()
+        }
+    }
     
     @Published
     private(set) var state: State = .message(Lines([
@@ -58,7 +66,16 @@ final class LLDBStream: ObservableObject {
     
     private var sink = Sink(capacity: 100) {
         didSet {
-            state = .views(sink.pastMessages)
+            updateState()
+        }
+    }
+    
+    private func updateState() {
+        switch organization {
+        case .interleaved:
+            state = .interleavedViews(sink.pastMessages)
+        case .tabs:
+            state = .sectionedVisualizations(sink.pastMessages.sectioned())
         }
     }
     
@@ -66,8 +83,9 @@ final class LLDBStream: ObservableObject {
         
         case message(Lines)
         case error(String)
-        case views([Visualization])
-        
+        case interleavedViews([Visualization])
+        case sectionedVisualizations([VisualizationSection])
+                
     }
     
 }
@@ -85,5 +103,26 @@ struct Sink {
     var capacity: Int
     
     private(set) var pastMessages: [Visualization] = []
+    
+}
+
+extension Array where Element == Visualization {
+    
+    func sectioned() -> [VisualizationSection] {
+        var buckets: [String: [Visualization]] = [:]
+        for element in self {
+            let name = element.type
+            if var bucket = buckets[name] {
+                bucket.append(element)
+                buckets[name] = bucket
+            } else {
+                buckets[name] = [element]
+            }
+        }
+        return buckets.map { (name, visualizations) in
+            VisualizationSection(name: name,
+                                 visualizations: visualizations)
+        }
+    }
     
 }
