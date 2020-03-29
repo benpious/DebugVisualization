@@ -47,21 +47,8 @@ final class LLDBStream: ObservableObject {
     }
     
     @Published
-    private(set) var state: State = .message(Lines([
-        .init("Waiting for data...",
-              style: .title),
-        .init([
-            .init("Use"),
-            .init("command script import", style: .code),
-            .init("to set up the script,")
-        ]),
-        .init([
-            .init("and"),
-            .init("send_visual myVarName", style: .code),
-            .init("to start sending data")
-        ])
-    ]))
-    
+    private(set) var state: State = startingState
+        
     let willChange = PassthroughSubject<LLDBStream, Never>()
     
     private var sink = Sink(capacity: 100) {
@@ -88,7 +75,28 @@ final class LLDBStream: ObservableObject {
                 
     }
     
+    func reset() {
+        sink.reset()
+        state = startingState
+        libraryCache = [:]
+    }
+   
 }
+
+fileprivate let startingState: LLDBStream.State = .message(Lines([
+    .init("Waiting for data...",
+          style: .title),
+    .init([
+        .init("Use"),
+        .init("command script import", style: .code),
+        .init("to set up the script,")
+    ]),
+    .init([
+        .init("and"),
+        .init("send_visual myVarName", style: .code),
+        .init("to start sending data")
+    ])
+]))
 
 fileprivate struct Sink {
         
@@ -103,6 +111,10 @@ fileprivate struct Sink {
     var capacity: Int
     
     private(set) var pastMessages: [Visualization] = []
+    
+    mutating func reset() {
+        pastMessages = []
+    }
     
 }
 

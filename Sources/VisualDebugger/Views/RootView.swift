@@ -7,7 +7,8 @@ struct RootView: View {
     
     var body: some View {
         ZStack {
-            stream.state.view(using: $stream.organization)
+            stream.state.view(using: $stream.organization,
+                              reset: stream.reset)
         }
     }
     
@@ -15,7 +16,8 @@ struct RootView: View {
 
 extension LLDBStream.State {
     
-    func view(using binding: Binding<Organization>) -> AnyView {
+    func view(using binding: Binding<Organization>,
+              reset: @escaping () -> ()) -> AnyView {
         switch self {
         case .error(let error):
             return AnyView(
@@ -29,7 +31,8 @@ extension LLDBStream.State {
             )
         case .interleavedViews(let views):
             return AnyView(
-                DataControl(organization: binding) {
+                DataControl(organization: binding,
+                            reset: reset) {
                     DataView(visualizations: views)
                 }
                 .frame(maxWidth: .infinity,
@@ -38,7 +41,8 @@ extension LLDBStream.State {
             )
         case .sectionedVisualizations(let sections):
             return AnyView(
-                DataControl(organization: binding) {
+                DataControl(organization: binding,
+                            reset: reset) {
                     TabbedVisualizationsView(sections: sections)
                 }
             )

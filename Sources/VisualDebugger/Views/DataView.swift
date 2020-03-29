@@ -3,14 +3,18 @@ import SwiftUI
 struct DataControl<Content>: View where Content: View {
     
     init(organization: Binding<Organization>,
+         reset: @escaping () -> (),
          @ViewBuilder content: @escaping () -> (Content)) {
         self.organization = organization
         self.content = content
+        self.reset = reset
     }
     
     var organization: Binding<Organization> // TODO: Find a way to use the @Binding annotation
     
     let content: () -> (Content)
+    
+    let reset: () -> ()
     
     var body: some View {
         VStack {
@@ -23,6 +27,10 @@ struct DataControl<Content>: View where Content: View {
                     }
                 }
                 .fixedSize()
+                Spacer()
+                Button("Reset") {
+                    self.reset()
+                }
                 Spacer()
             }
             content()
