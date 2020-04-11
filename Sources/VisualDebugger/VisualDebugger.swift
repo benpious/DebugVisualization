@@ -7,9 +7,7 @@ import SwiftUI
 /// debugger messages, and `makeView()` to get a view
 /// that you can add to your window hierarchy in an `NSHostingView`.
 public final class VisualDebugger {
-    
-    private let lldbStream: LLDBStream
-    
+        
     public init() {
         lldbStream = LLDBStream(port: 7001)
     }
@@ -22,6 +20,8 @@ public final class VisualDebugger {
         RootView()
             .environmentObject(lldbStream)
     }
+    
+    private let lldbStream: LLDBStream
         
 }
 

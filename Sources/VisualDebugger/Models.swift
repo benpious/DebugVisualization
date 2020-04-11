@@ -73,16 +73,11 @@ final class TargetLibrary {
         // TODO: check to make sure no symbolic references in the name
         if let type = _typeByName(message.mangling.runtimeUsableName) as? Decodable.Type {
             let data = try type.decode(from: message.data)
-            typealias MakeViewFunc = @convention(c) (AnyObject) -> NSObject
-            if let makeView = addressOfFunction(named: message.mangledAnyViewName) {
-                let makeView = unsafeBitCast(makeView,
-                                             to: MakeViewFunc.self)
-                let view = makeView(data as AnyObject).value(forKey: "view")
-                if let view = view as? AnyView {
-                    return view
-                } else {
-                    throw ErrorMessage("\(String(describing: view)) couldn't be converted to SwiftUI.AnyView.")
-                }
+            typealias MakeObjcWrapper = @convention(c) (AnyObject) -> NSObject
+            if let makeObjcWrapper = addressOfFunction(named: message.mangledAnyViewName) {
+                let makeObjcWrapper = unsafeBitCast(makeObjcWrapper,
+                                                    to: MakeObjcWrapper.self)
+                return try makeVisualization(from: makeObjcWrapper(data as AnyObject))
             } else {
                 throw ErrorMessage("Couldn't find a function named \(message.mangledAnyViewName)")
             }
