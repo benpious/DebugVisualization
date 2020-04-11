@@ -1,52 +1,15 @@
 # VisualDebugger
 
-`VisualDebugger` aims to let you write SwiftUI code inside your existing Swift Package/Xcode Project to visualize state or processes inside your app.
+`VisualDebugger` aims to let you write SwiftUI code inside your existing Swift Package/Xcode Project to visualize state or processes inside your app. TL:DR it's `po` + SwiftUI.
 
-This project is currently a prototype. Many features have limitations which are discussed at the bottom of this file. 
+This project is currently a prototype. Many features have limitations, which are discussed at the bottom of this file. 
 
 ## Installation
 
-`VisualDebugger` is currently available as a Swift Package that you can integrate into a MacOS App. Due to limitations of SPM, it's currently impossible to provide the full app as a package. 
+Clone this repo, then double-click on `Package.swift`.  Then  build and run the `VisualDebuggerApp` target. 
 
-1. Press Command-Shift-N to make a new Project in Xcode, and choose single-view MacOS app. 
-2. File>Swift Packages>Add Package Dependency. Enter `https://github.com/benpious/DebugVisualization` as the URL, and click "next." Pick the version you want, or simply pick `master`. 
-3.  Replace the contents of  `AppDelegate.swift` with
-```
-import Cocoa
-import SwiftUI
-import VisualDebugger
-
-@NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate {
-
-    var window: NSWindow?
-    let debugger = VisualDebugger()
-
-    func applicationDidFinishLaunching(_ aNotification: Notification) {
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 480, height: 300),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
-            backing: .buffered,
-            defer: false
-        )
-        window.center()
-        window.setFrameAutosaveName("Main Window")
-        window.contentView = NSHostingView(rootView: debugger.makeView())
-        window.makeKeyAndOrderFront(nil)
-        debugger.start()
-        self.window = window
-    }
-    
-    func applicationWillTerminate(_ aNotification: Notification) {
-        // Insert code here to tear down your application
-    }
-
-}
-
-```
-4. Turn of the application sandbox for the new app. Thsi is necessary so that it can listen on a socket, and read the contents of your application under debug. 
-
-You're now ready to run the app. 
+Alternatively, you can add a dependency on the `VisualDebugger` package to an existing SPM project or non-SPM Xcode 
+project, using the normal methods for doing so. 
 
 ## Setup and Usage
 

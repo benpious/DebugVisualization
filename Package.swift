@@ -1,5 +1,4 @@
 // swift-tools-version:5.1
-// The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
 
@@ -10,17 +9,30 @@ let package = Package(
     ],
     products: [
     .library(name: "VisualDebugger",
-             targets: ["VisualDebugger"])
+             targets: ["VisualDebugger"]),
+    .executable(name: "VisualDebuggerApp",
+                targets: [
+                    "VisualDebuggerApp"
+    ])
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0")
     ],
     targets: [
+        .target(name: "VisualDebuggerApp",
+                dependencies: ["VisualDebugger"],
+                linkerSettings: [
+                    .unsafeFlags(
+                        ["-sectcreate", "__TEXT", "__info_plist",  "Info.plist"]
+                    )
+        ]),
         .target(
             name: "VisualDebugger",
-            dependencies: ["NIO"]),
+            dependencies: ["NIO"]
+        ),
         .testTarget(
             name: "VisualDebuggerTests",
-            dependencies: ["VisualDebugger"]),
+            dependencies: ["VisualDebugger"]
+        ),
     ]
 )
