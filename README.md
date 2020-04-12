@@ -4,6 +4,8 @@
 
 This project is currently a prototype. Many features have limitations, which are discussed at the bottom of this file. 
 
+![Red Black Tree & Fortune's Algorithm Example](/Images/rbtree-example)
+
 ## Installation
 
 Clone this repo, then double-click on `Package.swift`.  Then  build and run the `VisualDebuggerApp` target. 
