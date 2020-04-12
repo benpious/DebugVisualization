@@ -104,7 +104,7 @@ And with this done, you can add a breakpoint in the spot you want to send the va
 5. `VisualDebugger` loads the library that contains the code using `dlopen`.
 6. `VisualDebugger` attempts to demangle the name it got from step 2, and calls `_typeByName` from the stdlib to get a pointer to the metadata, which it then casts to `Decodable.Type`.
 7. `VisualDebugger` gets a pointer to the `ToAnyView` function using `dlsym`
-8. The data is deserialized, passed to the `ToAnyView ` function, and displayed onscreen.
+8. The data is deserialized, passed to the `ToAnyView`  function, and displayed onscreen.
 
 ## Limitations
 
