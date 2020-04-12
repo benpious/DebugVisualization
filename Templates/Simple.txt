@@ -1,0 +1,15 @@
+@_cdecl("<#TargetName#>_<#TypeName#>ToAnyView")
+func <#TypeName#>ToAnyView(data: AnyObject) -> AnyObject {
+    class O: NSObject {
+
+        init(view: AnyView) {
+            self.view = view
+        }
+
+        @objc
+        let view: Any
+    }
+    let data = data as! <#TypeName#>
+    return O(view: AnyView(data.body))
+}
+
