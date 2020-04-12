@@ -1,6 +1,6 @@
 # VisualDebugger
 
-`VisualDebugger` aims to let you write SwiftUI code inside your existing Swift Package/Xcode Project to visualize state or processes inside your app. TL:DR it's `po` + SwiftUI.
+`VisualDebugger` aims to let you write SwiftUI code inside your existing Swift Package or Xcode Project to visualize state or processes inside your app. In short, it's `po` + SwiftUI. 
 
 This project is currently a prototype. Many features have limitations, which are discussed at the bottom of this file. 
 
@@ -29,34 +29,45 @@ Once the preceding breakpoint is hit, the `send_visual` comand will be availabe 
 
 ### An Example Usage
 
-Suppose that you want to visualize an `[Int]` as a bar chart. Inside of the target application, perhaps even in the file with the variable you want, declare a struct as follows: 
+Suppose that you want to visualize an `[Int]` as a bar chart. Inside of the target framework declare a struct as follows: 
+
 ```
 #if canimport(SwiftUI)
 import SwiftUI
 
-struct MyVisualization: View, Codable {
-
-    let data: [Int]
+public struct MyVisualization: View, Codable {
     
-    var body: some View {
-        HStack(spacing: 2.0) {
-            ForEach(data.enumerated(), id: \.0) { (_, magnitude)
-                Color.red.frame(height: 10 * magnitude)
-            }
+    public init(data: [Int]) {
+        self.data = data
+    }
+    
+    public let data: [Int]
+    
+    public var body: some View {
+        HStack(alignment: .bottom,
+               spacing: 2.0) {
+                ForEach(Array(data.enumerated()), id: \.0) { (_, magnitude) in
+                    Color.red.frame(width: 10, height: 10 * CGFloat(magnitude))
+                }
         }
     }
     
 }
 
-// the rest of the code will also be in the #if directive
+// The rest of the code in subsequent examples can also be in the #if directive, if necessary. 
 
 #endif
 ```
 
-Now, you must create a specially formed function that will be used by `VisualDebugger` as the entry point to your program. This function has a few requirements: 
+
+Now, you must create a specially formed function that will be used by `VisualDebugger` as the entry point to your program. 
+This function has a few requirements: 
 -  The name must be of the form "[moduleName]_[TypeName]ToAnyView"
 - The function's type must be `@convention(c) (AnyObject) -> NSObject`
 - The function returns an class that can have the Objective-C `value(for:)`   function called on it; in short, you should inherit from `NSObject`
+
+Templates for the built-in visualizations are included in the `Templates` directory of this repo; here is a filled in example, 
+which assumes that your working in a Framework named `MyTargetName`: 
 
 ```
 @_cdecl("MyTargetName_MyVisualizationToAnyView") 
@@ -111,4 +122,4 @@ The Name demangler also only supports certain types; any type name with "symboli
 
 Working entirely in your project can be a double-edged sword. If you need a complex visualization, you can find your project is polluted with quick-and-dirty test code.  [Flipper](https://github.com/facebook/flipper) could be a good alternative if you want to keep test code out of your app, and it'll let you leverage the Javascript ecosystem by taking advantage of libraries like [D3](https://d3js.org).
 
-The performance of lldb may also become an issue if you call `send_visual` in a tight loop. A potential solution to this would be to offer a `VisualDebugger` SDK. 
+The performance of lldb may also become an issue if you call `send_visual` in a tight loop. A potential future solution to this would be to offer a `VisualDebugger` SDK that lets you write `sendVisual()` directly in your code, which would be much faster. 
