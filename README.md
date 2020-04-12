@@ -4,7 +4,7 @@
 
 This project is currently a prototype. Many features have limitations, which are discussed at the bottom of this file. 
 
-![Red Black Tree & Fortune's Algorithm Example](/Images/rbtree-example)
+![Red Black Tree & Fortune's Algorithm Example](/Images/rbtree-example.png)
 
 ## Installation
 
