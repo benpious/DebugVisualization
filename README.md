@@ -33,7 +33,7 @@ Once the preceding breakpoint is hit, the `send_visual` comand will be availabe 
 
 Suppose that you want to visualize an `[Int]` as a bar chart. Inside of the target framework declare a struct as follows: 
 
-```
+```swift
 #if canimport(SwiftUI)
 import SwiftUI
 
@@ -71,7 +71,7 @@ This function has a few requirements:
 Templates for the built-in visualizations are included in the `Templates` directory of this repo; here is a filled in example, 
 which assumes that your working in a Framework named `MyTargetName`: 
 
-```
+```swift
 @_cdecl("MyTargetName_MyVisualizationToAnyView") 
 func MyVisualizationToAnyView(data: AnyObject) -> AnyObject {
     class O: NSObject {
