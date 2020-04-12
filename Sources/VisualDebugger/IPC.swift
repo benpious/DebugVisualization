@@ -1,3 +1,19 @@
+//
+//  Copyright (c) 2020. Ben Pious
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
 import NIO
 
 final class Server {
@@ -75,7 +91,8 @@ final class Server {
     func start() {
         server.bind(host: "localhost", port: port)
             .whenComplete { (result) in
-                // TODO:
+                // TODO: Figure out if anything needs to be cleaned up, as the documtation states,
+                // and if so, clean it up.
                 print(result)
             }
     }
