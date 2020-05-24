@@ -28,7 +28,7 @@ struct TreeVisualization: Identifiable, VisualizationType {
     let id: Int
     let children: [TreeVisualization]
     fileprivate let direction: Tree.Direction
-        
+    
     init(from object: SomeObject) throws {
         var id = 0
         try self.init(from: object,
@@ -44,14 +44,14 @@ struct TreeVisualization: Identifiable, VisualizationType {
         children = try (object.children.unwrap() as [AnyObject])
             .map { (object: AnyObject) in
                 try TreeVisualization(from: SomeObject(object),
-                         id: &id)
+                                      id: &id)
         }
     }
     
     var view: AnyView {
         AnyView(
             Tree(tree: self,
-                              direction: .horizontal)
+                 direction: direction)
         )
     }
     
@@ -111,7 +111,7 @@ fileprivate struct Tree: View {
                 )
             }
         }
-
+        
         
         func child<Content>(
             spacing: CGFloat? = nil,
@@ -134,7 +134,7 @@ fileprivate struct Tree: View {
                 )
             }
         }
-                
+        
     }
     
     let tree: TreeVisualization
@@ -152,7 +152,7 @@ fileprivate struct Tree: View {
             direction.child(spacing: 20) {
                 ForEach(tree.children) {
                     Tree(tree: $0,
-                                      direction: self.direction)
+                         direction: self.direction)
                 }
             }
         }
