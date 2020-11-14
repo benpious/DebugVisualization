@@ -20,7 +20,7 @@ extension TargetLibrary {
     
     func makeVisualization(from object: AnyObject) throws -> AnyView {
         let object = SomeObject(object)
-        let types: [VisualizationType.Type] = [SimpleVisualization.self, TreeVisualization.self]
+        let types: [VisualizationType.Type] = [SimpleVisualization.self]
         var errors: [String] = []
         for type in types {
             do {
