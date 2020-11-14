@@ -34,7 +34,7 @@ Once the preceding breakpoint is hit, the `send_visual` comand will be availabe 
 Suppose that you want to visualize an `[Int]` as a bar chart. Inside of the target framework declare a struct as follows: 
 
 ```swift
-#if canimport(SwiftUI)
+#if canImport(SwiftUI)
 import SwiftUI
 
 public struct MyVisualization: View, Codable {
@@ -56,7 +56,7 @@ public struct MyVisualization: View, Codable {
     
 }
 
-// The rest of the code in subsequent examples can also be in the #if directive, if necessary. 
+// The rest of the code in subsequent examples can also be placed in the #if directive.
 
 #endif
 ```
@@ -66,12 +66,15 @@ Now, you must create a specially formed function that will be used by `VisualDeb
 This function has a few requirements: 
 -  The name must be of the form "[moduleName]_[TypeName]ToAnyView"
 - The function's type must be `@convention(c) (AnyObject) -> NSObject`
-- The function returns an class that can have the Objective-C `value(for:)`   function called on it; in short, you should inherit from `NSObject`
+- The function returns an class that can have the Objective-C  `value(for:)`   function called on it; in short, you should inherit from `NSObject`
 
 Templates for the built-in visualizations are included in the `Templates` directory of this repo; here is a filled in example, 
 which assumes that your working in a Framework named `MyTargetName`: 
 
 ```swift
+
+#warning("Note: make sure your test module or app is named \"MyTargetName\" or change the prefix to match your target's name or this will not work. (Feel free to delete this)")
+
 @_cdecl("MyTargetName_MyVisualizationToAnyView") 
 func MyVisualizationToAnyView(data: AnyObject) -> AnyObject {
     class O: NSObject {

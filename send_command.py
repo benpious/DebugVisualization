@@ -4,15 +4,15 @@ import asyncio
 def send_visual(debugger, var_name, result, internal_dict):
     debugger = lldb.debugger.GetCommandInterpreter()
     output = expr(debugger, """import Darwin
-let data = try JSONEncoder().encode({name})
-let string = String(data: data, encoding: .utf8)!
-let type: Any.Type = Swift.type(of: {name})
-let pointer = UnsafeRawPointer(bitPattern: unsafeBitCast(type, to: Int.self))
-var info = Dl_info()
-dladdr(pointer, &info)
-let fileName = String(cString: info.dli_fname)
-let mangledName = String(cString: info.dli_sname)
-fileName + "," + mangledName + "," + string
+let _data = try JSONEncoder().encode({name})
+let _string = String(data: _data, encoding: .utf8)!
+let _type: Any.Type = type(of: {name})
+let _pointer = UnsafeRawPointer(bitPattern: unsafeBitCast(_type, to: Int.self))
+var _info = Dl_info()
+dladdr(_pointer, &_info)
+let _fileName = String(cString: _info.dli_fname)
+let _mangledName = String(cString: _info.dli_sname)
+_fileName + "," + _mangledName + "," + _string
         """.format(name=var_name))
     asyncio.run(send(output))
 

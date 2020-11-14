@@ -1,4 +1,4 @@
-// swift-tools-version:5.1
+// swift-tools-version:5.3
 
 import PackageDescription
 
@@ -28,7 +28,7 @@ let package = Package(
         ]),
         .target(
             name: "VisualDebugger",
-            dependencies: ["NIO"]
+            dependencies: [.product(name: "NIO", package: "swift-nio")]
         ),
         .testTarget(
             name: "VisualDebuggerTests",
