@@ -12,7 +12,8 @@ var _info = Dl_info()
 dladdr(_pointer, &_info)
 let _fileName = String(cString: _info.dli_fname)
 let _mangledName = String(cString: _info.dli_sname)
-_fileName + "," + _mangledName + "," + _string
+let _processPID = ProcessInfo.processInfo.processIdentifier
+String(_processPID) + "," + _fileName + "," + _mangledName + "," + _string
         """.format(name=var_name))
     asyncio.run(send(output))
 

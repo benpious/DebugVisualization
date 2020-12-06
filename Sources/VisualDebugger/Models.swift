@@ -22,13 +22,16 @@ struct LLDBMessage: Codable {
     let mangling: MangledName
     let libraryLocation: String
     let data: Data
+    let processIdentifier: Int
     
     init(mangling: MangledName,
          libraryLocation: String,
-         data: Data) {
+         data: Data,
+         processIdentifier: Int) {
         self.mangling = mangling
         self.libraryLocation = libraryLocation
         self.data = data
+        self.processIdentifier = processIdentifier
     }
     
     init(data: [UInt8]) throws {
@@ -37,21 +40,35 @@ struct LLDBMessage: Codable {
         }
         if let firstSplit = data.firstIndex(of: comma) {
             let restOfString = data[(firstSplit + 1)...]
-            if let secondSplit = restOfString.firstIndex(of: comma) {
-                libraryLocation = try String(
-                    uInt8: Array(data[0..<firstSplit].dropFirst() + [0])
-                ) // HACK:
+            let processIdentifierString = try String(
+                uInt8: Array(data[0..<firstSplit])
+            )
+            if let processIdentifier = Int(processIdentifierString.dropFirst()) {
+                self.processIdentifier = processIdentifier
+            } else {
+                throw ErrorMessage("Didn't receive a valid process identifier, got \"\(processIdentifierString)\"")
+            }
+        if let secondSplit = restOfString.firstIndex(of: comma) {
+            libraryLocation = try String(
+                uInt8: Array(data[firstSplit..<secondSplit].dropFirst() + [0])
+            )
+            let restOfString = data[(secondSplit + 1)...]
+            if let thirdSplit = restOfString.firstIndex(of: comma) {
+                 // HACK:
                 mangling = try String(
-                    uInt8: Array(data[(firstSplit + 1)..<secondSplit].dropLast()) + [0]
+                    uInt8: Array(data[(secondSplit + 1)..<thirdSplit].dropLast()) + [0]
                 )
                     .basicDemangle()
-                let encodedData = data[(secondSplit + 1)...]
+                let encodedData = data[(thirdSplit + 1)...]
                     .dropLast(3)
                     .removingDoubleEscapedEscapeCharacters()
                 self.data = Data(encodedData)
             } else {
                 throw ErrorMessage("Message should be of the form \"library location, mangled type name, data\", comma delimited: \(data)")
             }
+        } else {
+            throw ErrorMessage("Message should be of the form \"library location, mangled type name, data\", comma delimited: \(data)")
+        }
         } else {
             throw ErrorMessage("Message should be of the form \"library location, mangled type name, data\", comma delimited: \(data)")
         }
@@ -133,16 +150,17 @@ fileprivate extension Decodable {
 extension String {
     
     init(uInt8 bytes: [UInt8]) throws {
-        self = try bytes.withUnsafeBufferPointer { (bytes) in
-            try bytes.withMemoryRebound(to: CChar.self) { (bytes) in
-                if let pointer = bytes.baseAddress,
-                    let string = String(utf8String: pointer)  {
-                    return string
-                } else {
-                    throw ErrorMessage("Couldn't convert data into UTF-8 encoded String.")
-                }
-            }
-        }
+        self = String(bytes: bytes, encoding: .utf8)!
+//        self = try bytes.withUnsafeBufferPointer { (bytes) in
+//            try bytes.withMemoryRebound(to: CChar.self) { (bytes) in
+//                if let pointer = bytes.baseAddress,
+//                    let string = String(utf8String: pointer) {
+//                    return string
+//                } else {
+//                    throw ErrorMessage("Couldn't convert data into UTF-8 encoded String.")
+//                }
+//            }
+//        }
     }
     
 }
