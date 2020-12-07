@@ -150,17 +150,11 @@ fileprivate extension Decodable {
 extension String {
     
     init(uInt8 bytes: [UInt8]) throws {
-        self = String(bytes: bytes, encoding: .utf8)!
-//        self = try bytes.withUnsafeBufferPointer { (bytes) in
-//            try bytes.withMemoryRebound(to: CChar.self) { (bytes) in
-//                if let pointer = bytes.baseAddress,
-//                    let string = String(utf8String: pointer) {
-//                    return string
-//                } else {
-//                    throw ErrorMessage("Couldn't convert data into UTF-8 encoded String.")
-//                }
-//            }
-//        }
+        if let string = String(bytes: bytes, encoding: .utf8) {
+            self = string
+        } else {
+            throw ErrorMessage("Couldn't convert data into UTF-8 encoded String.")
+        }
     }
     
 }
