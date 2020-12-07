@@ -16,14 +16,21 @@
 
 import SwiftUI
 
-struct Visualization: Hashable {
+struct Visualization: Hashable, Identifiable {
     
+    var id: Int {
+        hashValue
+    }
+    
+    let pid: Int
     let type: String
     let view: AnyView
     let timeStamp: Date
     
     func hash(into hasher: inout Hasher) {
         hasher.combine(timeStamp)
+        hasher.combine(type)
+        hasher.combine(pid)
     }
     
     static func == (lhs: Visualization, rhs: Visualization) -> Bool {

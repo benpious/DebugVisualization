@@ -49,7 +49,7 @@ extension LLDBStream.State {
             return AnyView(
                 DataControl(organization: binding,
                             reset: reset) {
-                    DataView(visualizations: views)
+                    LatestView(sections: views)
                 }
                 .frame(maxWidth: .infinity,
                        maxHeight: .infinity,
@@ -64,6 +64,6 @@ extension LLDBStream.State {
             )
         }
     }
-        
+    
 }
 

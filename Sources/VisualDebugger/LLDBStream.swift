@@ -40,7 +40,8 @@ final class LLDBStream: ObservableObject {
             }()
             let view = try library.deserialize(message: message)
             transferToMain {
-                self.sink.add(visualization: Visualization(type: message.mangling.typeName,
+                self.sink.add(visualization: Visualization(pid: message.processIdentifier,
+                                                           type: message.mangling.typeName,
                                                            view: view,
                                                            timeStamp: Date()))
             }
@@ -76,9 +77,9 @@ final class LLDBStream: ObservableObject {
     private func updateState() {
         switch organization {
         case .interleaved:
-            state = .interleavedViews(sink.pastMessages)
+            state = .interleavedViews(sink.pastMessages.sectioned(by: \.pid))
         case .tabs:
-            state = .sectionedVisualizations(sink.pastMessages.sectioned())
+            state = .sectionedVisualizations(sink.pastMessages.sectioned(by: \.type))
         }
     }
     
@@ -86,7 +87,7 @@ final class LLDBStream: ObservableObject {
         
         case message(Lines)
         case error(String)
-        case interleavedViews([Visualization])
+        case interleavedViews([VisualizationSection])
         case sectionedVisualizations([VisualizationSection])
                 
     }
@@ -136,10 +137,10 @@ fileprivate struct Sink {
 
 fileprivate extension Array where Element == Visualization {
     
-    func sectioned() -> [VisualizationSection] {
-        var buckets: [String: [Visualization]] = [:]
+    func sectioned<T>(by path: KeyPath<Element, T>) -> [VisualizationSection] where T: Hashable, T: CustomStringConvertible {
+        var buckets: [T: [Visualization]] = [:]
         for element in self {
-            let name = element.type
+            let name = element[keyPath: path]
             if var bucket = buckets[name] {
                 bucket.append(element)
                 buckets[name] = bucket
@@ -148,7 +149,7 @@ fileprivate extension Array where Element == Visualization {
             }
         }
         return buckets.map { (name, visualizations) in
-            VisualizationSection(name: name,
+            VisualizationSection(name: name.description,
                                  visualizations: visualizations)
         }
     }
