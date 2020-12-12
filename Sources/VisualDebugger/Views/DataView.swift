@@ -21,12 +21,13 @@ struct DataControl<Content>: View where Content: View {
     init(organization: Binding<Organization>,
          reset: @escaping () -> (),
          @ViewBuilder content: @escaping () -> (Content)) {
-        self.organization = organization
+        _organization = organization
         self.content = content
         self.reset = reset
     }
     
-    var organization: Binding<Organization> // TODO: Find a way to use the @Binding annotation
+    @Binding
+    var organization: Organization
     
     let content: () -> (Content)
     
@@ -38,7 +39,7 @@ struct DataControl<Content>: View where Content: View {
                 MenuButton("Organization") {
                     ForEach(Organization.allCases) { organization in
                         Button(String(describing: organization).capitalized) {
-                            self.organization.wrappedValue = organization
+                            self.organization = organization
                         }
                     }
                 }
