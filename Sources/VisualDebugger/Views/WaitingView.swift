@@ -31,13 +31,13 @@ struct WaitingView: View {
             .foregroundColor(.white)
             .padding(cornerRadius * 2)
             .modifier(PulsingBackground(animatableData: flash ? 1 : 0.2,
-                                        cornerRadius: self.cornerRadius))
+                                        cornerRadius: cornerRadius))
             .cornerRadius(cornerRadius)
             .onAppear {
                 withAnimation(Animation
                     .easeInOut(duration: 3)
                     .repeatForever(autoreverses: true)) {
-                        self.flash.toggle()
+                        flash.toggle()
                 }
         }
     }
@@ -59,7 +59,7 @@ fileprivate struct PulsingBackground: AnimatableModifier {
                                                            height: cornerRadius))
                 }
                 .stroke(lineWidth: 4)
-                .background(Color(red: 0, green: 0.4, blue: self.animatableData))
+                .background(Color(red: 0, green: 0.4, blue: animatableData))
                 .foregroundColor(Color.green)
             })
     }
