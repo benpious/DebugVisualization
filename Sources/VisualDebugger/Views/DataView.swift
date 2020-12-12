@@ -63,7 +63,7 @@ struct TabbedVisualizationsView: View {
     var body: some View {
         TabView {
             ForEach(sections) { section in
-                LatestView(sections: [section])
+                LatestView(visualizations: section.visualizations)
                     .tabItem {
                         Text(section.name)
                     }
@@ -76,33 +76,26 @@ struct TabbedVisualizationsView: View {
 struct LatestView: View {
     
     @State
-    var selected: Visualization?
+    var index: Int?
     
-    let sections: [VisualizationSection]
+    let visualizations: [Visualization]
     
     var body: some View {
         VStack {
             Divider()
             HSplitView {
-                List(content: {
-                        ForEach(sections) { section in
-                            Section(header: Text("PID: \(section.name))")) {
-                                ForEach(section.visualizations) { (visualization) in
-                                    Cell(visualization: visualization,
-                                         selectedVisualization: $selected)
-                                }
-                            }
-                        }
-                    }
-                )
-                .listStyle(SidebarListStyle())
+                List(visualizations
+                        .map {  String($0.pid) + ", " + dateFormatter.string(from: $0.timeStamp) }
+                        .identified(),
+                     selection: $index) { (timeStamp) in
+                    Text(timeStamp.element)
+                }
+                .cornerRadius(8)
                 HStack {
                     Spacer()
                     VStack {
                         Spacer()
-                        if let selected = selected ?? sections.first?.visualizations.first {
-                            selected.view
-                        }
+                        visualizations[index ?? 0].view
                         Spacer()
                     }
                     Spacer()
@@ -112,33 +105,6 @@ struct LatestView: View {
         }
         .frame(maxWidth: .infinity,
                maxHeight: .infinity)
-    }
-    
-}
-
-fileprivate struct Cell: View {
-    
-    let visualization: Visualization
-    
-    @Binding
-    var selectedVisualization: Visualization?
-    
-    var body: some View {
-        VStack(alignment: .leading) {
-            Text(dateFormatter.string(from: visualization.timeStamp))
-            Divider()
-        }
-        .background({ () -> Color in
-            if selectedVisualization == visualization {
-                return .accentColor
-            } else {
-                return .clear
-            }
-        }())
-        .onTapGesture {
-            // Selection didn't work in this version of SwiftUI, so I had to do this.
-            selectedVisualization = visualization
-        }
     }
     
 }

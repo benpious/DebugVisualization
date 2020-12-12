@@ -77,7 +77,7 @@ final class LLDBStream: ObservableObject {
     private func updateState() {
         switch organization {
         case .interleaved:
-            state = .interleavedViews(sink.pastMessages.sectioned(by: \.pid))
+            state = .interleavedViews(sink.pastMessages)
         case .tabs:
             state = .sectionedVisualizations(sink.pastMessages.sectioned(by: \.type))
         }
@@ -87,7 +87,7 @@ final class LLDBStream: ObservableObject {
         
         case message(Lines)
         case error(String)
-        case interleavedViews([VisualizationSection])
+        case interleavedViews([Visualization])
         case sectionedVisualizations([VisualizationSection])
                 
     }
