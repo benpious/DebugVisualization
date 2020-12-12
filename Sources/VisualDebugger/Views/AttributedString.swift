@@ -16,8 +16,6 @@
 
 import SwiftUI
 
-typealias S = Lines.Line.Segment
-
 struct Lines: View {
     
     enum Style {
@@ -31,7 +29,7 @@ struct Lines: View {
             case .code:
                 return .system(size: 16,
                                weight: .regular,
-                               design: Font.Design.monospaced)
+                               design: .monospaced)
             case .title:
                 return .title
             case .body:

@@ -24,7 +24,7 @@ struct ErrorView: View {
         HStack {
             Text("􀇾")
             Text(text)
-                .foregroundColor(Color.white)
+                .foregroundColor(.white)
         }
         .padding(16)
         .background(Color(red: 224 / 256, green: 119 / 256, blue: 119 / 256))
