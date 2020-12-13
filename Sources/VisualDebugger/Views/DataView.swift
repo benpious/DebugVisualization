@@ -102,6 +102,15 @@ struct LatestView: View {
                     Spacer()
                 }
                 .layoutPriority(1)
+                VStack {
+                    Spacer()
+                    Text(String(describing: visualizations[index ?? 0].mirrorInfo))
+                        .lineLimit(nil)
+                        .font(.system(.body,
+                                      design: .monospaced))
+                    Spacer()
+                }
+                .frame(idealWidth: 100)
             }
         }
         .frame(maxWidth: .infinity,

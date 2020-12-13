@@ -15,6 +15,7 @@
 //
 
 import NIO
+import Foundation
 
 final class Server {
     
@@ -42,6 +43,8 @@ final class Server {
         
         typealias InboundIn = ByteBuffer
         typealias OutboundOut = ByteBuffer
+        
+        fileprivate var recording: [[UInt8]]? = nil
 
         func channelRead(context: ChannelHandlerContext, data: NIOAny) {
             var buffer = unwrapInboundIn(data)
@@ -52,9 +55,14 @@ final class Server {
         }
 
         func channelReadComplete(context: ChannelHandlerContext) {
+            recording?.append(accumulation)
+            onReadComplete()
+            context.flush()
+        }
+        
+        func onReadComplete() {
             onRead?(accumulation)
             accumulation = []
-            context.flush()
         }
 
         public func errorCaught(context: ChannelHandlerContext, error: Error) {
@@ -91,11 +99,52 @@ final class Server {
     func start() {
         server.bind(host: "localhost", port: port)
             .whenComplete { (result) in
-                // TODO: Figure out if anything needs to be cleaned up, as the documtation states,
+                // TODO: Figure out if anything needs to be cleaned up, as the documentation states,
                 // and if so, clean it up.
                 print(result)
             }
     }
-
+    
+    var shouldRecordNetworkEvents: Bool = false {
+        didSet {
+            if shouldRecordNetworkEvents {
+                if handler.recording == nil {
+                    handler.recording = []
+                }
+            } else {
+                handler.recording = nil
+            }
+        }
+    }
+    
+    func readExistingRecording() throws {
+        let data = try Data(contentsOf: recordingURL)
+        let recordings = try JSONDecoder().decode([[UInt8]].self,
+                                                   from: data)
+        for recording in recordings {
+            handler.accumulation = recording
+            handler.onReadComplete()
+        }
+    }
+    
+    func writeRecording() throws {
+        if let recording = handler.recording {
+            try JSONEncoder()
+                .encode(recording)
+                .write(to: recordingURL)
+        }
+    }
+    
 }
 
+fileprivate let recordingURL: URL = {
+    if let applicationSupportPath = FileManager
+        .default
+        .urls(for: .applicationSupportDirectory,
+              in: .allDomainsMask)
+        .first {
+        return applicationSupportPath.appendingPathComponent("recording.json")
+    } else {
+        fatalError("couldn't create a recording URL")
+    }
+}()

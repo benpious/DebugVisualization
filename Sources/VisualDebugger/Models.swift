@@ -35,42 +35,40 @@ struct LLDBMessage: Codable {
     }
     
     init(data: [UInt8]) throws {
-        guard let comma = ("," as Character).asciiValue else {
-            throw ErrorMessage("This should never happen: a comma isn't convertible to ASCII.")
+        let data = Data(data.removingDoubleEscapedEscapeCharacters())
+        let dictionary: [String: String]
+        do {
+        dictionary = try JSONDecoder()
+            .decode([String: String].self,
+                    from: data)
+        } catch {
+            // try-catch this code isn't strictly necessary,
+            // but it's very useful for debugging to keep it around, because I'm not sure how
+            // (or if it's possible) to print the swift error directly from a swift-error breakpoint.
+//            print(error)
+            throw error
         }
-        if let firstSplit = data.firstIndex(of: comma) {
-            let restOfString = data[(firstSplit + 1)...]
-            let processIdentifierString = try String(
-                uInt8: Array(data[0..<firstSplit])
-            )
-            if let processIdentifier = Int(processIdentifierString.dropFirst()) {
-                self.processIdentifier = processIdentifier
+        if let processIdentifierString = dictionary["pid"],
+           let processIdentifier = Int(processIdentifierString) {
+            if let fileName = dictionary["fileName"] {
+                if let mangledName = dictionary["mangledName"] {
+                    if let dataString = dictionary["data"],
+                       let data = dataString.data(using: .utf8) {
+                        self.processIdentifier = processIdentifier
+                        self.libraryLocation = fileName
+                        self.data = data
+                        self.mangling = try mangledName.basicDemangle()
+                    } else {
+                        throw ErrorMessage("Couldn't find or deserialize data in dictionary \(dictionary)")
+                    }
+                } else {
+                    throw ErrorMessage("Couldn't find mangled name in dictionary \(dictionary)")
+                }
             } else {
-                throw ErrorMessage("Didn't receive a valid process identifier, got \"\(processIdentifierString)\"")
-            }
-        if let secondSplit = restOfString.firstIndex(of: comma) {
-            libraryLocation = try String(
-                uInt8: Array(data[firstSplit..<secondSplit].dropFirst() + [0])
-            )
-            let restOfString = data[(secondSplit + 1)...]
-            if let thirdSplit = restOfString.firstIndex(of: comma) {
-                 // HACK:
-                mangling = try String(
-                    uInt8: Array(data[(secondSplit + 1)..<thirdSplit].dropLast()) + [0]
-                )
-                    .basicDemangle()
-                let encodedData = data[(thirdSplit + 1)...]
-                    .dropLast(3)
-                    .removingDoubleEscapedEscapeCharacters()
-                self.data = Data(encodedData)
-            } else {
-                throw ErrorMessage("Message should be of the form \"library location, mangled type name, data\", comma delimited: \(data)")
+                throw ErrorMessage("Couldn't find file name in dictionary \(dictionary)")
             }
         } else {
-            throw ErrorMessage("Message should be of the form \"library location, mangled type name, data\", comma delimited: \(data)")
-        }
-        } else {
-            throw ErrorMessage("Message should be of the form \"library location, mangled type name, data\", comma delimited: \(data)")
+            throw ErrorMessage("Couldn't find a pid in dictionary: \(dictionary)")
         }
     }
     
@@ -102,7 +100,7 @@ final class TargetLibrary {
         }
     }
     
-    func deserialize(message: LLDBMessage) throws -> AnyView {
+    func deserialize(message: LLDBMessage) throws ->  AnyView {
         // TODO: check to make sure no symbolic references in the name
         if let type = _typeByName(message.mangling.runtimeUsableName) as? Decodable.Type {
             let data = try type.decode(from: message.data)
@@ -127,10 +125,10 @@ final class TargetLibrary {
 
 struct ErrorMessage: LocalizedError {
     
-    let errorDescription: String?
+    let errorDescription: String
     
     var localizedDescription: String {
-        errorDescription!
+        errorDescription
     }
     
     init(_ value: String) {
@@ -147,28 +145,28 @@ fileprivate extension Decodable {
     
 }
 
-extension String {
-    
-    init(uInt8 bytes: [UInt8]) throws {
-        if let string = String(bytes: bytes, encoding: .utf8) {
-            self = string
-        } else {
-            throw ErrorMessage("Couldn't convert data into UTF-8 encoded String.")
-        }
-    }
-    
-}
-
 extension Array where Element == UInt8 {
     
     func removingDoubleEscapedEscapeCharacters() -> [UInt8] {
+        // We send the output of an llbd `expr` command, *not* the actual data. So lldb
+        // and (maybe) Swift Strings do their own formatting and stuff that we have to
+        // get rid of turn the string into valid JSON again.
         let backslash = 92
-        var new = self
+        // messages begin with a quote, and some other garbage that has to be removed
+        var new = Array(dropFirst().dropLast(3))
         var removed = 0
-        for (index, char) in enumerated() {
+        var shouldSkipNext = false
+        for (index, char) in Array(dropFirst().dropLast(3)).enumerated() {
+            if shouldSkipNext {
+                // if we encounter a string like '\\\\"' we want the output to be '\\"', so we
+                // skip the next character.
+                shouldSkipNext = false
+                continue
+            }
             if char == backslash {
                 new.remove(at: index - removed)
                 removed += 1
+                shouldSkipNext = true
             }
         }
         return new

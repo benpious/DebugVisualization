@@ -40,10 +40,11 @@ final class LLDBStream: ObservableObject {
             }()
             let view = try library.deserialize(message: message)
             transferToMain {
-                self.sink.add(visualization: Visualization(pid: message.processIdentifier,
-                                                           type: message.mangling.typeName,
-                                                           view: view,
-                                                           timeStamp: Date()))
+                self.sink.add(element: Visualization(pid: message.processIdentifier,
+                                                     type: message.mangling.typeName,
+                                                     mirrorInfo: String(data: message.data, encoding: .utf8) ?? "Data can't be converted to UTF-8 String",
+                                                     view: view,
+                                                     timeStamp: Date()))
             }
         } catch {
             transferToMain {
@@ -68,12 +69,12 @@ final class LLDBStream: ObservableObject {
         
     let willChange = PassthroughSubject<LLDBStream, Never>()
     
-    private var sink = Sink(capacity: 100) {
+    private var sink = Sink<Visualization>(capacity: 100) {
         didSet {
             updateState()
         }
     }
-    
+        
     private func updateState() {
         switch organization {
         case .interleaved:
@@ -97,6 +98,23 @@ final class LLDBStream: ObservableObject {
         state = startingState
         libraryCache = [:]
     }
+    
+    var shouldRecordNetworkEvents: Bool {
+        get {
+            server.shouldRecordNetworkEvents
+        }
+        set {
+            server.shouldRecordNetworkEvents = newValue
+        }
+    }
+    
+    func loadRecording() throws {
+        try server.readExistingRecording()
+    }
+    
+    func saveRecording() throws  {
+        try server.writeRecording()
+    }
    
 }
 
@@ -115,10 +133,10 @@ fileprivate let startingState: LLDBStream.State = .message(Lines([
     ])
 ]))
 
-fileprivate struct Sink {
+struct Sink<T> {
         
-    mutating func add(visualization: Visualization) {
-        pastMessages.insert(visualization,
+    mutating func add(element: T) {
+        pastMessages.insert(element,
                             at: 0)
         if pastMessages.count > capacity {
             pastMessages.remove(at: 0)
@@ -127,7 +145,7 @@ fileprivate struct Sink {
     
     var capacity: Int
     
-    private(set) var pastMessages: [Visualization] = []
+    private(set) var pastMessages: [T] = []
     
     mutating func reset() {
         pastMessages = []

@@ -68,8 +68,50 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                               action: #selector(NSApplication.terminate(_:)),
                               keyEquivalent: "q"))
         submenuItem.submenu = submenu
+        let recordMenu = NSMenu()
+        let recordMenuItem = NSMenuItem()
+        recordMenuItem.title = "Recording"
+        recordMenu.title = "Recording"
+        recordMenu.addItem(.init(title: "Toggle Recording",
+                                 action: #selector(toggleRecording),
+                                 keyEquivalent: "r"))
+        recordMenu.addItem(.init(title: "Save Recording",
+                                 action: #selector(saveRecording),
+                                 keyEquivalent: "s"))
+        recordMenu.addItem(.init(title: "Load Recording",
+                                 action: #selector(loadRecording),
+                                 keyEquivalent: "l"))
+        recordMenuItem.submenu = recordMenu
         menu.addItem(submenuItem)
+        menu.addItem(recordMenuItem)
         return menu
+    }
+    
+    @objc
+    func saveRecording() {
+        showModalOnFailuresOf {
+            try debugger.saveRecording()
+        }
+    }
+    
+    @objc
+    func toggleRecording() {
+        debugger.shouldRecordNetworkEvents.toggle()
+    }
+    
+    @objc
+    func loadRecording() {
+        showModalOnFailuresOf {
+            try debugger.loadRecording()
+        }
+    }
+    
+    private func showModalOnFailuresOf(_ work: () throws -> ()) {
+        do {
+           try work()
+        } catch {
+            window?.presentError(error)
+        }
     }
 
 }

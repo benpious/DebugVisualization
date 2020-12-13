@@ -38,6 +38,23 @@ public final class VisualDebugger {
     }
     
     private let lldbStream: LLDBStream
+    
+    public var shouldRecordNetworkEvents: Bool {
+        get {
+            lldbStream.shouldRecordNetworkEvents
+        }
+        set {
+            lldbStream.shouldRecordNetworkEvents = newValue
+        }
+    }
+    
+    public func loadRecording() throws {
+        try lldbStream.loadRecording()
+    }
+    
+    public func saveRecording() throws {
+        try lldbStream.saveRecording()
+    }
         
 }
 

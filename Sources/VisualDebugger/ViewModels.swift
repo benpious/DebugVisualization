@@ -24,6 +24,7 @@ struct Visualization: Hashable, Identifiable {
     
     let pid: Int
     let type: String
+    let mirrorInfo: String
     let view: AnyView
     let timeStamp: Date
     
@@ -31,10 +32,14 @@ struct Visualization: Hashable, Identifiable {
         hasher.combine(timeStamp)
         hasher.combine(type)
         hasher.combine(pid)
+        hasher.combine(mirrorInfo)
     }
     
-    static func == (lhs: Visualization, rhs: Visualization) -> Bool {
-        lhs.timeStamp == rhs.timeStamp
+    static func == (lhs: Visualization,
+                    rhs: Visualization) -> Bool {
+        lhs.timeStamp == rhs.timeStamp &&
+            lhs.pid == rhs.pid &&
+            lhs.mirrorInfo == rhs.mirrorInfo
     }
         
 }
